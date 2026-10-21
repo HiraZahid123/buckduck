@@ -1,0 +1,88 @@
+BUCKDUCK INC. · MASTER SERVICES AGREEMENT & STATEMENT OF WORK
+Master Software Development & Delivery Agreement
+Production Rebuild of the BuckDuck Multi-Vendor African & Caribbean Grocery Delivery Marketplace with Comprehensive Funds-Flow, Operational Policies, Milestones, and Legal Protections.
+Client / Product Owner:
+Paa, Founder & CEO — BuckDuck Inc.
+Lead Contractor / Developer:
+Engineering & Delivery Team
+Customer Brand Name:
+BuckDuck (100% exclusive customer-facing brand; BuckDuck Inc. legal entity)
+Pilot Launch Market:
+Silver Spring, Maryland (Eastern Time / US-Eastern) + Dynamic Admin Expandable Zones
+Total Fixed Investment:
+$1,100 USD (Fixed Price Structured Across 5 Measurable Milestone Deliverables)
+Delivery & Support:
+5 Weeks to Production Launch + 30 Days Hypercare (Covers First 4 Saturday Cycles)
+1. Complete Stripe Connect Funds-Flow & Refund Specification
+1.1. Single-Cart Multi-Store Transaction Architecture: Customers can purchase from multiple independent specialty grocers in one checkout session. The platform processes a single Stripe PaymentIntent on the customer's card/Apple Pay/Google Pay, holds the gross funds in BuckDuck Inc.'s master Stripe platform balance, and automatically segregates the checkout into independent merchant sub-orders (BD-xxxxx-A, BD-xxxxx-B, etc.).
+★ Precise Funds-Flow Equation Example ($90 Grocery Basket Across 3 Stores)• Customer Basket: Store A (African Pantry) $30.00 + Store B (Fresh Produce) $40.00 + Store C (Halal Butcher) $20.00 = $90.00 Subtotal.• Fee Calculation: Delivery Fees ($5.99 × 3 stores = $17.97) + Service Fee (5% = $4.50, min $1.99) + Driver Tip ($10.00) = $32.47.• Total Customer Charge: $122.47 captured in 1 PaymentIntent via Stripe Elements with 3D-Secure fraud verification.• Platform Escrow: Funds remain in BuckDuck's master Stripe balance throughout the week while stores prepare items.• Automated Merchant Payout Transfer: Upon driver delivery confirmation on Saturday, Stripe Connect Express transfers net merchandise proceeds (Subtotal − 15% Platform Commission) directly to each store's connected bank account:   - Store A Net Transfer: $30.00 − $4.50 (15%) = $25.50   - Store B Net Transfer: $40.00 − $6.00 (15%) = $34.00   - Store C Net Transfer: $20.00 − $3.00 (15%) = $17.00• Driver Compensation: Driver receives Base Pay ($5.50 × 3 stops = $16.50) + 100% of Tip ($10.00) = $26.50 total.• BuckDuck Net Platform Revenue: Total Commissions ($13.50) + Delivery Fees ($17.97) + Service Fee ($4.50) − Driver Base Pay ($16.50) = $19.47.• Stripe Fee Handling: Standard credit card processing fee (2.9% + $0.30) is absorbed from platform revenue; merchant payouts are protected.
+Comprehensive Refund & Adjustment Protocols
+Scenario 1 — Customer Cancellation Prior to Merchant Acceptance: If customer cancels while order is in 'Placed' status, the platform triggers a 100% full refund of items, delivery fees, service fees, and tips via Stripe API with immediate stock restoration.
+Scenario 2 — Out-of-Stock Item During Packing: If Store B discovers a $10.00 item is missing while packing, the store marks that item 'Out of Stock' in the portal. The system automatically: (a) deducts $10.00 from Store B subtotal ($30.00 remaining), (b) recalculates platform commission ($4.50 on remaining $30), (c) triggers an automated partial Stripe refund of $10.00 to customer card, and (d) updates customer receipt with event log.
+Scenario 3 — Single Store Cancellation in Multi-Store Cart: If Store C declines/cancels an order, only Store C's subtotal ($20.00) and Store C's delivery fee ($5.99) are refunded. Store A and Store B proceed unaffected.
+Scenario 4 — Customer Unavailability / Delivery Failure: If driver cannot deliver due to customer fault (unreachable, gate locked), delivery fees are non-refundable to cover driver base pay; perishable items follow admin exception protocol.
+Scenario 5 — Chargeback & Dispute Defense: Automated webhook listener captures Stripe `charge.dispute.created`. System automatically compiles order proof (timestamps, driver delivery photo, GPS location) to submit evidence.
+Idempotency Protection: All Stripe webhook handlers enforce strict idempotency keys to guarantee zero duplicate charges or double payouts.
+2. Precise Saturday Delivery, Cancellation & Failed-Delivery Rules
+2.1. Pilot Zone & Time-Zone Protocol: The initial operating launch region is Silver Spring, Maryland (Montgomery County / DC Metro area). All server clocks, delivery schedules, and cutoffs strictly adhere to US/Eastern Time (EST/EDT). The Admin Console provides a 1-click feature to activate new ZIP codes and service zones as BuckDuck expands across Maryland, DC, and Virginia.
+2.2. Delivery Windows & Capacity Locking: Standard delivery windows are Morning (6:00 AM–12:00 PM) and Afternoon (12:00 PM–4:00 PM). Admin can add, edit, or pause delivery slots dynamically at a click. Each window enforces a strict order capacity (e.g. 120 orders). During checkout, the system initiates a 15-minute reservation lock. If checkout completes, the spot is permanently decremented; if abandoned, the lock auto-releases back to the public pool. Overbooking is programmatically prevented.
+2.3. Ordering Cutoff & Merchant Packing Deadlines: The default ordering cutoff is 24 hours prior to window start (configurable in Admin, e.g. Friday 6:00 AM or Friday 11:59 PM). Once cutoff triggers, ordering for that Saturday window locks automatically. Merchants must have all orders packed in sealed BuckDuck bags and marked 'Ready for Pickup' at least 1 hour prior to window start (5:00 AM for Morning, 11:00 AM for Afternoon).
+Failed-Delivery & Driver Exception Handling Protocol
+Step 1 (Driver Contact Attempt): If customer is not home, gate code fails, or access is blocked, driver must make at least two (2) direct contact attempts via the in-app phone/SMS link and wait a minimum of 5 minutes.
+Step 2 (Safe Drop-off Decision): If a secure location is available (covered porch, apartment building concierge, front door), driver selects 'Left at Front Door' / 'Left with Concierge', captures a clear mandatory photo of the delivered BuckDuck bags, and completes the drop-off.
+Step 3 (Exception Logging): If no secure location exists and delivery is impossible, driver selects 'Report Exception' in the app, chooses the specific failure code (CUSTOMER_UNAVAILABLE, ACCESS_DENIED, DAMAGED_PACKAGING, SAFETY_HAZARD), and captures photographic evidence.
+Step 4 (Admin Live Intervention): Dispatch board immediately flags the exception in red. Dispatch can attempt secondary customer contact, authorize safe alternate drop-off, or assign order to secondary afternoon re-delivery route.
+Step 5 (Perishable Goods Policy): In accordance with standard grocery delivery regulations, uncollected perishable goods cannot be re-shelved; driver is compensated full base pay for the completed route attempt.
+3. Measurable Milestone Acceptance Criteria & Remedies for Missed Deadlines
+The project is structured across 5 weekly milestones totaling the agreed $1,100 fixed investment. Payments are released strictly upon verifiable demonstration on the live staging environment against written acceptance criteria:
+Milestone
+Week
+Functional Scope & Deliverables
+Payment
+Verifiable Acceptance Test
+Milestone 1
+Week 1
+UI Design System, Monorepo Setup, PostgreSQL Schema, Auth (RBAC 4 roles), Staging VPS Live with SSL
+$200
+Paa logs into staging across all 4 roles; DB migrations run successfully on live VPS.
+Milestone 2
+Week 2
+SEO Storefront, Silver Spring Catalog, Multi-Store Cart Engine, 1-Click Window & Zone Creators
+$225
+Shopper adds items from 3 stores into 1 cart; dynamic Saturday window booking locks spot.
+Milestone 3
+Week 3
+Stripe Checkout, Store Payouts, Admin Promo Engine, Merchant Kanban with Audio Chimes
+$250
+Paid checkout creates separate store sub-orders; kitchen chime sounds; promo code applies.
+Milestone 4
+Week 4
+Driver GPS App, Bag Label Generator, Admin Dispatch Board, Twilio SMS & Resend Emails
+$225
+Driver navigates to drop-off, snaps photo; customer receives SMS; admin reassigns driver.
+Milestone 5
+Week 5
+Friday Rush Load Test, Security Audit, Pilot Store Seeding, Live Stripe Cutover & Launch
+$200
+Mandatory 3-store multi-cart test passes; zero concurrency locks; live production cutover.
+Mandatory Release 1 Live Multi-Store Acceptance Test
+Before Milestone 5 sign-off and final payment, the platform must successfully execute this mandatory live test: (1) A customer creates an account and adds products from at least three (3) distinct partner grocers into one cart. (2) Customer selects a Saturday delivery window and applies an active admin promo code. (3) Customer completes payment via card / Apple Pay. (4) System instantly creates three separate sub-orders on three distinct merchant portals. (5) Merchant tablets emit audible chimes. (6) Merchants confirm bag counts and mark orders ready. (7) Dispatch board groups all three orders to a driver. (8) Driver confirms pickup, navigates to drop-off, and submits photo proof. (9) Customer receives delivery SMS with photo link. (10) Financial ledger reconciles commissions, merchant payouts, driver pay, and platform net revenue.
+Remedies for Missed Deadlines & Defect Correction SLA
+Defect Correction SLA: If any deliverable fails its agreed acceptance criteria on staging, the engineering team must correct the defect within 48 to 72 hours at zero additional cost prior to milestone sign-off.
+Cure Period for Schedule Delays: The project duration is exactly 35 calendar days (5 weeks) from kickoff. A three (3) business-day grace cure period applies for unforeseen third-party delays (e.g. carrier SMS approvals).
+Remedies for Developer Delays: If a milestone delivery date is missed beyond the cure period due solely to developer delay without a client-approved change order, the client is entitled to a 5% milestone fee reduction for each week of delay, or the right to terminate the agreement and receive an immediate 100% refund of any unaccepted milestone funds.
+4. Defined Security Testing, Backup Restoration & Final Handover
+4.1. Security Architecture & Testing: The platform undergoes rigorous security hardening prior to commercial launch: (a) OWASP Top 10 compliance audit; (b) Rate-limiting on authentication and payment endpoints to block brute-force attacks; (c) Strict input sanitization via NestJS class-validators to eliminate SQL injection and XSS vulnerabilities; (d) Helmet security headers, CORS origin restrictions, and secure HTTP-only cookies; (e) PCI DSS SAQ A verification confirming that raw credit card numbers never touch or reside on BuckDuck servers.
+4.2. Backup Restoration & Disaster Recovery Verification: Automated daily PostgreSQL database dumps (`pg_dump`) and media snapshots are saved to secure storage with 30-day retention. Prior to launch, the engineering team must conduct a live Disaster Recovery drill on the staging server, restoring the database from a backup snapshot to formally prove that data integrity is 100% intact with a Recovery Time Objective (RTO) under 60 minutes and a Recovery Point Objective (RPO) under 24 hours.
+4.3. Final Handover Deliverables: At launch completion, BuckDuck Inc. receives: (1) Full Git repository ownership with complete commit history; (2) Master root credentials for Hostinger VPS, Cloudflare, Twilio, Resend, and Stripe; (3) Comprehensive API Swagger/OpenAPI documentation and Database Schema Diagram (ERD); (4) Disaster Recovery & Server Administration Runbook; (5) High-resolution printable packing slip and bag sticker label asset templates; (6) Recorded video walkthrough and live 1-on-1 operational training session for Paa and dispatch staff.
+5. Clear Termination, Intellectual Property & Account-Access Protections
+5.1. 100% Intellectual Property Assignment (Work Made for Hire): All custom software, application code, frontend components, backend APIs, database architectures, algorithms, workflows, and documentation created under this agreement are considered a 'Work Made for Hire'. Upon milestone payment, 100% exclusive global copyright, ownership, and intellectual property rights transfer irrevocably to BuckDuck Inc. The engineering team retains zero ownership, zero licensing rights, and zero recurring claims.
+5.2. Account Ownership & Direct Governance: All production infrastructure accounts—including the Domain registrar, Hostinger VPS, Cloudflare DNS, GitHub private repository, Stripe production account, Twilio SMS account, and Google Cloud Console—are registered in the legal name of Paa / BuckDuck Inc. Paa holds root Super-Administrator credentials from Day 1. The engineering team operates under delegated collaborator access, which Paa may revoke at any time.
+5.3. Termination for Convenience: Paa may terminate this agreement at any milestone boundary by providing three (3) calendar days written notice. In such event, Paa pays only for successfully completed and verified milestones, and the engineering team must immediately push and hand over all work-in-progress code and assets without withholding.
+5.4. Termination for Cause: Either party may terminate immediately if the other commits a material breach (e.g. failure to deliver accepted software, failure to provide essential credentials) that remains uncured after five (5) business days written notice. In the event of developer material breach, Paa is entitled to an immediate refund of any uncompleted milestone funds.
+6. 30-Day Hypercare Support & Monthly Operating Costs
+6.1. 30-Day Post-Launch Hypercare SLA: The engineering team provides thirty (30) days of dedicated free support following production launch. This explicitly includes active live monitoring during the first four (4) consecutive live Saturday delivery cycles. SLA Response Times: Severity 1 (Critical / Checkout down) = response within 4 hours with continuous remediation; Severity 2 (High / Merchant queue impaired) = response within 8 hours; Severity 3 (Minor / Visual anomaly) = response within 24 hours.
+6.2. Web App vs. Native App Scope Clarification: The agreed $1,100 / 5-week scope delivers a fully responsive web application and installable Progressive Web App (PWA) with mobile home screen installation, full-screen display, offline caching, and native camera access for delivery photos. Compiled Native iOS (Apple App Store) and Native Android (Google Play Store) packages are Phase 2 add-ons, requiring separate Apple ($99/yr) and Google ($25) developer accounts and multi-week store review submissions.
+6.3. Estimated Monthly Third-Party Operating Overhead (Paid directly to providers by BuckDuck Inc.): Hostinger KVM 2 VPS = $8.99/mo ($14.99 on renewal); Domain & SSL = ~$1.00/mo; Cloudflare CDN = $0.00; Resend Email = $0.00 (Free up to 3,000 emails/mo); Twilio SMS = ~$25–$50/mo based on order volume; Driver Navigation (1-Tap Google Maps Launch) = $0.00. Total Estimated Fixed Running Overhead: ≈ $35.00 – $85.00 / month.
+Acknowledged, Approved & Signed:___________________________________Paa, Founder & CEOBuckDuck Inc.Date: October ____, 2026
+Agreed, Committed & Signed:___________________________________Engineering & Delivery LeadBuckDuck Production TeamDate: October ____, 2026

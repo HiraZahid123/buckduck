@@ -1,0 +1,630 @@
+BUSINESS PLAN · 2026
+BuckDuck
+StoreFront USA Marketplace
+Weekly grocery delivery from the neighborhood stores immigrant families trust — one cart, many stores, delivered every Saturday.
+Prepared by
+Date
+Status
+Paa, Founder
+October 2026
+Confidential — for investors, partners and lenders
+Contents
+01     Executive Summary
+02     Company Overview
+03     Problem & Solution
+04     Market Analysis
+05     Competitive Landscape
+06     Business Model & Unit Economics
+07     Operations Plan
+08     Merchant & Driver Programs
+09     Technology Platform
+10     Marketing & Go-to-Market
+11     Financial Projections
+12     Milestones & Roadmap
+13     Funding Request & Use of Funds
+14     Risks & Mitigation
+15     Legal & Compliance
+1. Executive Summary
+BuckDuck is a grocery delivery marketplace that works like DoorDash or Uber Eats, with one deliberate difference: delivery happens once a week, on Saturday, inside time windows customers choose in advance — Morning (6 AM–12 PM) or Afternoon (12 PM–4 PM). Independent grocery stores open their own storefronts on the StoreFront USA website and the BuckDuck app, receive orders all week, and pack them in branded BuckDuck bags for driver pickup on delivery day. Customers pay BuckDuck at checkout by card, Apple Pay or Google Pay.
+We start where existing apps serve customers worst: African, Caribbean and other specialty grocers. These stores carry products big-box retailers do not stock — gari, palm oil, egusi, stockfish, scotch bonnets, halal goat — but they are rarely on Instacart, and families often drive 30–60 minutes each weekend to reach them. BuckDuck brings those stores to the customer's door in one coordinated weekly run.
+Why weekly delivery wins
+Concentrating all deliveries into one day lets us batch routes tightly, keep driver pay high per hour, and let stores pack calmly in advance instead of fulfilling one-off orders all week. Customers already shop for staples weekly, so the model fits how they buy. The result is lower cost per delivery than on-demand apps and better margins for everyone.
+$67.74
+Avg. customer order
+$16.99
+BuckDuck revenue / order
+$8.23
+Contribution / order
+889
+Weekly orders to break even (Y1)
+The opportunity
+Online grocery is mainstream. US e-grocery sales reached a record $12.7 billion in December 2025, up 32% year over year, and online now accounts for about 19% of weekly grocery spending (Brick Meets Click).
+The community is large and growing. The sub-Saharan African immigrant population in the US tripled since 2000 to about 2.5 million in 2024, led by Nigeria, Ethiopia and Ghana (Migration Policy Institute). Add Caribbean, Latin American and other diaspora shoppers and the addressable audience multiplies.
+Specialty grocers are a big, under-digitized channel. US ethnic supermarkets generated an estimated $58.9 billion in 2025 (IBISWorld), yet most independent stores have no e-commerce or delivery.
+What is already built
+The full platform is built and deployment-ready: a customer website and installable mobile app, a merchant portal, a driver app and an admin console, sharing one backend with Stripe payments (card, Apple Pay, Google Pay), Stripe Connect payouts, delivery-window capacity management and order tracking. Section 9 describes it in detail.
+Financial snapshot
+Year 1
+Year 2
+Year 3
+Metro areas
+1
+2
+4
+Partner stores (end of year)
+35
+90
+220
+Orders
+20,800
+93,600
+234,000
+Gross merchandise value
+$1,408,992
+$6,340,464
+$15,851,160
+Net revenue
+$353,392
+$1,650,264
+$4,225,660
+EBITDA
+($208,909)
+($20,089)
+$574,776
+The ask: a $450,000 seed round to launch in one metro, sign 35 stores, and reach weekly break-even in that metro by the end of the first year (Section 13).
+2. Company Overview
+Item
+Detail
+Legal name
+BuckDuck Inc. (Delaware C-Corporation recommended for investment)
+Customer brand
+BuckDuck — app and delivery service
+Marketplace
+StoreFront USA — the website where stores run their storefronts
+Founder
+Paa
+Model
+Three-sided marketplace: customers, partner stores, delivery drivers
+Delivery schedule
+Once weekly, Saturday, in 6 AM–12 PM and 12 PM–4 PM windows (configurable)
+Packaging
+Sealed, labeled BuckDuck-branded bags packed by each store
+Payments
+Collected by BuckDuck via Stripe; stores paid out via Stripe Connect
+Mission
+Make it effortless for every family to fill their kitchen with the foods of home, while giving independent grocers the digital storefront and delivery network they could never build alone.
+Vision
+Become the default weekly grocery channel for diaspora and specialty food shoppers across the United States — the place where every independent grocer has a storefront and every Saturday ends with a full pantry.
+Values
+Reliability over speed. A promised Saturday window, kept every week, beats a 30-minute promise kept sometimes.
+Partners first. Stores keep their customer relationships and their brand; drivers earn a fair, predictable wage.
+Authenticity. We carry the real products communities ask for, from the stores they already trust.
+Transparency. Clear fees for customers, clear commission for stores, clear pay for drivers.
+3. Problem & Solution
+The problem
+For customers
+Specialty groceries are scattered across stores that may sit far apart — a Ghanaian market for gari and shito, a halal butcher for goat, a Caribbean shop for ackee.
+Mainstream delivery apps rarely list these stores, and big-box substitutes miss the products or the quality.
+Weekend shopping trips cost hours of driving, fuel and parking.
+For independent grocers
+No affordable way to sell online: building a website, payments and delivery is out of reach for most owner-operators.
+On-demand apps charge high commissions and push unpredictable one-off orders that disrupt store operations.
+Younger, busier customers are drifting to convenience channels the store cannot offer.
+For drivers
+On-demand gig work means idle time between orders, unpredictable earnings and long waits at restaurants.
+The BuckDuck solution
+Figure 1. The BuckDuck delivery model
+Stage
+What happens
+Who
+1. Customer orders
+Shops one or many stores in a single cart on the website or app, picks a Saturday window, tips the driver and pays by card, Apple Pay or Google Pay.
+Customer
+2. Store packs
+Receives orders all week in the merchant portal; accepts, packs into sealed BuckDuck bags and marks each order ready with a bag count before the window.
+Partner store
+3. Driver picks up
+Goes online, accepts ready orders into a batched route, confirms the bag count at each store.
+BuckDuck driver
+4. Delivered
+Delivers inside the chosen window, records a drop-off note and photo; the customer sees every step in real time.
+Driver → customer
+Why once a week
+Route density. Every order for a neighborhood lands on the same day, so a driver can run 6–8 stops per hour instead of 2–3 on demand.
+Calm store operations. An order cutoff 24 hours before each window gives stores a predictable packing schedule and lets them order inventory against known demand.
+Habit. Weekly ordering matches how families buy staples, which supports high repeat rates and a natural subscription offer.
+Lower prices. Efficiency lets us charge a modest $5.99 delivery fee per store while still paying drivers well.
+4. Market Analysis
+Industry trends
+US online grocery hit a record $12.7 billion in December 2025, up 32% from a year earlier; average order value rose nearly 11% and order frequency increased for the 16th straight month (Brick Meets Click via SDCExec).
+Online's share of weekly grocery spend reached about 19%, the highest level since May 2020.
+US ethnic supermarkets are an estimated $58.9 billion industry (IBISWorld, 2025) with largely offline operations.
+The sub-Saharan African immigrant population reached about 2.5 million in 2024; top origins are Nigeria (533,000), Ethiopia (304,000) and Ghana (223,000). Washington DC, New York, Dallas, Minneapolis and Atlanta hold over a third of this population (Migration Policy Institute).
+Market sizing
+We size the market bottom-up from households we can realistically serve, using conservative assumptions.
+Layer
+Definition
+Estimate
+TAM
+US specialty and ethnic grocery spend (ethnic supermarket industry revenue)
+≈ $58.9B / year
+SAM
+Share bought online by diaspora households in the top 10 metros (≈ 8% online share of a ≈ $12B metro spend)
+≈ $1.0B / year
+SOM (Year 3)
+BuckDuck GMV across 4 metros at 4,500 average weekly orders
+≈ $15.9M / year
+SAM figures are planning estimates derived from the sources above and should be refined with city-level data before launch.
+Target customers
+Segment
+Profile
+What they want
+Diaspora families
+First- and second-generation African and Caribbean households, 30–55, cooking traditional meals several times a week
+Authentic staples in bulk, fresh meat and fish, one reliable weekly delivery
+Busy young professionals
+25–40, grew up with these foods, short on time, mobile-first
+Convenience, Apple Pay / Google Pay, ordering from the couch
+Adventurous home cooks
+Food-curious shoppers of any background
+Discovery, recipes, curated bundles
+Churches, caterers & events
+Community organizations ordering for weekend events
+Large orders, morning windows, invoicing
+Launch market
+The demo platform is configured for Houston, Texas, which has a large, established West African and Caribbean community and dense clusters of specialty grocers along the Bellaire, Bissonnet and Beechnut corridors. Strong alternatives based on population data are Dallas, Atlanta, Washington DC and Minneapolis. Final selection should weigh store density, delivery radius and founder presence; the platform supports any city through ZIP-code service areas.
+5. Competitive Landscape
+Competitor
+Model
+Strengths
+Gaps BuckDuck fills
+Instacart
+On-demand shoppers in partner chains
+Huge reach, fast delivery
+Few independent ethnic grocers; shopper picks unfamiliar items; high fees
+DoorDash / Uber Eats
+On-demand, restaurant-first, some grocery
+Brand awareness, driver supply
+Grocery is secondary; commissions up to ~30%; no weekly planning
+Walmart+ / Amazon Fresh
+Own inventory, subscription delivery
+Price, speed, scale
+Limited authentic specialty products
+Weee! and Asian-focused apps
+Inventory-based ethnic e-grocer
+Proves demand for ethnic online grocery
+Focus on Asian and Latino categories; does not empower local stores
+Stores' own delivery / WhatsApp orders
+Informal, phone or chat ordering
+Personal relationships
+No payments, tracking or scale; owner does the driving
+Competitive advantages
+Supply nobody else aggregates. Authentic specialty stores, each with its own branded storefront.
+Structural cost advantage. Batched Saturday routes cut delivery cost per order sharply versus on-demand.
+Store-friendly terms. 15% commission (versus up to ~30% on restaurant apps), store-packed orders and no surprise one-off pickups.
+Multi-store cart. One checkout across several stores, all delivered in the same window.
+Community trust. Built by and for the communities we serve, marketed through churches, associations and cultural events.
+6. Business Model & Unit Economics
+Revenue streams
+Stream
+Who pays
+Rate
+Status
+Merchant commission
+Store
+15% of merchandise (configurable per store)
+Live in platform
+Delivery fee
+Customer
+$5.99 per store order
+Live in platform
+Service fee
+Customer
+5% of items, $1.99 minimum
+Live in platform
+BuckDuck+ membership
+Customer
+$9.99/month: free delivery on first store, member pricing
+Year 2 roadmap
+Promoted listings & featured stores
+Store / brand
+Pay-per-placement on home and search
+Year 2 roadmap
+Packaging & supply program
+Store
+Branded bags and liners supplied at cost-plus
+Launch
+Event & catering orders
+Organizations
+Volume pricing and invoicing
+Year 2 roadmap
+Unit economics per order
+Based on a $55 average weekly merchandise basket. Weekly ordering produces larger baskets than on-demand delivery because customers consolidate a full week of staples into one order.
+Line item
+Amount
+Notes
+Merchandise subtotal
+$55.00
+Goes to the store, less commission
+Delivery fee
+$5.99
+Paid by customer
+Service fee
+$2.75
+5%, $1.99 minimum
+Driver tip (average)
+$4.00
+100% passed to driver
+Customer pays
+$67.74
+BuckDuck commission (15%)
+$8.25
+Revenue
+BuckDuck revenue
+$16.99
+Commission + delivery + service fees
+Driver base pay
+($5.50)
+Per order; driver also keeps the tip
+Payment processing
+($2.26)
+2.9% + $0.30 on customer total
+Support, insurance & claims
+($0.60)
+Variable allowance
+Packaging subsidy
+($0.40)
+Share of bag cost absorbed
+Contribution margin
+$8.23
+48% of BuckDuck revenue
+Who earns what on a typical order
+Store receives $46.75 for a $55 basket with no delivery cost of its own.
+Driver earns $9.50 (base pay plus tip). At 6 batched stops per hour that is about $57 per hour before expenses.
+BuckDuck keeps $8.23 to cover fixed costs and growth.
+7. Operations Plan
+The weekly cycle
+When
+Customers
+Stores
+BuckDuck operations
+Sunday – Thursday
+Browse and order; windows show live capacity
+Accept orders; reorder inventory against confirmed demand
+Monitor capacity; support; onboarding
+Friday
+Order cutoff 24 hours before each window
+Pack orders into sealed BuckDuck bags; mark ready with bag count
+Assign ready orders to drivers; confirm routes
+Saturday 6 AM – 12 PM
+Morning deliveries arrive
+Hand bags to drivers; verify counts
+Live dispatch board; exception handling
+Saturday 12 PM – 4 PM
+Afternoon deliveries arrive
+Final handoffs
+Close out routes; refunds and issues
+Following Tuesday
+Ratings and reorders
+Payouts land via Stripe
+Weekly driver pay; settlement report
+BuckDuck packaging standard
+Branded, sealed bags with a printed label: order number, customer name, window and bag count (e.g. 2 of 3).
+Insulated liners and ice packs for meat, fish and frozen items; separate bags for raw protein.
+Stores receive a starter kit of bags at onboarding, then reorder through the merchant portal.
+Drivers verify the bag count at pickup; mismatches are flagged before leaving the store.
+Quality, food safety and service levels
+Metric
+Target
+Orders delivered inside window
+≥ 97%
+Orders complete and accurate
+≥ 98%
+Cold items delivered at ≤ 40°F
+100% (spot-checked)
+Customer issue response time
+< 15 minutes on Saturdays
+Customer rating
+≥ 4.7 / 5
+Customer support
+In-app order tracking reduces "where is my order" contacts. Saturday support runs from 5:30 AM to 5 PM. Admins can reassign drivers, override statuses and issue full or partial refunds directly from the console.
+Team plan
+Role
+Year 1
+Year 2
+Year 3
+Founder / CEO
+1
+1
+1
+Operations & dispatch manager
+1
+2
+4
+Merchant success
+Founder
+1
+3
+Customer support (part-time)
+1
+3
+6
+Engineering (contract → hires)
+Contract
+1
+3
+Marketing & community
+Contract
+1
+2
+8. Merchant & Driver Programs
+Merchant program
+Apply online at StoreFront USA with store details; BuckDuck reviews and approves within 1–2 business days.
+Build the storefront: logo, brand color, description, and product listings with photos, prices, units and stock.
+Connect payouts through Stripe Connect Express — the store's bank account receives earnings automatically after each delivery.
+Receive the packaging kit and a 30-minute training on the order queue and packing standard.
+Go live and start receiving orders for the next Saturday.
+What stores get
+A branded storefront with its own web address
+Order queue: accept → pack → ready, with printable pick lists that combine items across orders
+Live dashboard: sales by week, top products, low-stock alerts, bags needed for Saturday
+Inventory control and product photo uploads
+Automatic payouts and a weekly settlement history
+Commercial terms
+15% commission on merchandise; launch partners receive 10% for their first 90 days
+No setup fees and no monthly fees
+Stores set their own prices
+Driver program
+Pay: $5.50 base per delivery plus 100% of tips, paid weekly.
+Predictable schedule: Saturdays only, with morning and afternoon shifts.
+Batched routes: up to 12 stops per route, with the full route, store pickup and customer drop-off shown in the driver app.
+Requirements: valid license, insurance, background check, a vehicle with cargo space, and an insulated bag kit (provided).
+Proof of delivery: a drop-off note and optional photo on every order.
+Driver classification
+Drivers are planned as independent contractors. Contractor rules vary by state (for example California's AB5 and Proposition 22). Have an employment attorney review the driver agreement before launch, and budget for occupational accident coverage.
+9. Technology Platform
+The full platform is built, tested end to end and ready to deploy. All four interfaces share one backend and one database.
+Interface
+Users
+Key functions
+StoreFront USA website + BuckDuck app
+Customers
+Browse stores and categories, product search, multi-store cart, Saturday window selection with live capacity, tipping, checkout with card / Apple Pay / Google Pay, order tracking timeline, cancel-and-refund, account
+Merchant portal
+Partner stores
+Dashboard, kanban order queue (accept → pack → ready with bag count), pick lists, product management with photos and stock, storefront editor, payouts and Stripe Connect onboarding
+Driver app
+Drivers
+Online/offline toggle, job board, route with stop map, navigation and call links, pickup confirmation, delivery completion with note and photo, earnings history
+Admin console
+BuckDuck operations
+Marketplace KPIs and GMV chart, live Saturday pipeline, dispatch board, order management with driver assignment, status override and refunds, store approval and commission, user management, delivery windows and capacity, finance settlement, fee and schedule settings
+Figure 2. StoreFront USA home page
+Figure 3. Checkout with Saturday window selection
+Figure 4. Merchant portal order queue
+Figure 5. Admin console overview
+Figure 6. Driver app route
+Architecture
+Backend: Node.js 22 and Express, with a shared business-logic core so every rule (pricing, windows, status flow, payouts) lives in one place.
+Database: SQLite for launch, with a clear migration path to PostgreSQL as volume grows.
+Payments: Stripe PaymentIntents with automatic payment methods, which turns on card, Apple Pay, Google Pay and Link; Stripe Connect Express for store payouts; signed webhooks for payment confirmation.
+Mobile: installable progressive web app on iOS and Android today; can be wrapped for the App Store and Google Play with Capacitor.
+Security: hashed passwords (bcrypt), signed session tokens, role-based access for all four user types, rate-limited sign-in, strict content security policy; card data never touches BuckDuck servers (PCI scope handled by Stripe).
+Deployment: Docker image with a persistent data volume; one-click configuration for Render, Railway or Fly.io.
+10. Marketing & Go-to-Market
+Phase 1 — Supply first (months 1–3)
+Sign 20–35 anchor stores across African, Caribbean, halal meat, produce and bakery categories before customer launch.
+Offer launch partners a 10% commission for 90 days, a free packaging kit and in-store signage ("Order us on BuckDuck").
+Photograph best-selling products for each store to make storefronts look complete on day one.
+Phase 2 — Community launch (months 3–6)
+Churches and associations: partner with congregations and national associations (Ghanaian, Nigerian, Ethiopian, Caribbean) for member promotions and Saturday morning group orders.
+In-store conversion: every partner store hands out QR cards with a first-order credit.
+Referral program: give $10, get $10 for each new customer who completes an order.
+Social and creators: short-form video with diaspora food creators showing a full Saturday haul.
+Events: booths at cultural festivals, independence-day celebrations and food fairs.
+Phase 3 — Habit and expansion (months 6–12)
+Launch BuckDuck+ membership and recurring "weekly basket" orders.
+Add recipe bundles (Jollof Night, Sunday Stew, Caribbean Brunch) that pull from several stores in one click.
+Prepare the second metro using the same playbook.
+Key growth metrics
+Metric
+Year 1 target
+Customer acquisition cost
+≤ $25
+First-to-second order conversion
+≥ 55%
+Monthly active customers ordering 3+ times
+≥ 40%
+Average orders per active customer per month
+≥ 2.5
+Store retention after 6 months
+≥ 90%
+11. Financial Projections
+Projections use the unit economics in Section 6 and conservative ramp assumptions. Tips pass through to drivers and are excluded from revenue.
+Key assumptions
+Assumption
+Value
+Average merchandise basket
+$55
+Average customer order (incl. fees and tip)
+$67.74
+Commission / delivery fee / service fee
+15% / $5.99 / 5% (min $1.99)
+Driver base pay per order
+$5.50
+Average weekly orders
+Year 1: 400 · Year 2: 1,800 · Year 3: 4,500
+Exit run-rate (weekly orders)
+Year 1: 900 · Year 2: 3,000 · Year 3: 6,000
+Three-year projected P&L
+Year 1
+Year 2
+Year 3
+Orders
+20,800
+93,600
+234,000
+Gross merchandise value (GMV)
+$1,408,992
+$6,340,464
+$15,851,160
+Merchant payouts
+$972,400
+$4,375,800
+$10,939,500
+Driver earnings (base + tips)
+$197,600
+$889,200
+$2,223,000
+Order revenue (commission + fees)
+$353,392
+$1,590,264
+$3,975,660
+Membership & promoted listings
+$0
+$60,000
+$250,000
+Net revenue
+$353,392
+$1,650,264
+$4,225,660
+Variable costs
+($182,301)
+($820,353)
+($2,050,884)
+Contribution
+$171,091
+$829,911
+$2,174,776
+Team & payroll
+($180,000)
+($470,000)
+($900,000)
+Marketing & customer acquisition
+($120,000)
+($230,000)
+($400,000)
+Technology & hosting
+($24,000)
+($48,000)
+($96,000)
+Insurance, legal & compliance
+($30,000)
+($55,000)
+($100,000)
+General & administrative
+($26,000)
+($47,000)
+($104,000)
+Total fixed costs
+($380,000)
+($850,000)
+($1,600,000)
+EBITDA
+($208,909)
+($20,089)
+$574,776
+Break-even
+With Year 1 fixed costs of $380,000 (about $7,308 per week) and $8.23 contribution per order, BuckDuck breaks even at roughly 889 orders per week. The Year 1 plan exits at 900 weekly orders, so the first metro reaches weekly break-even by the end of Year 1. The Year 1 loss is funded by the seed round. Year 2 runs near break-even while the second metro launches, and the business is profitable in Year 3 as four metros share one platform and one operations team.
+Sensitivity
+Scenario
+Change
+Year 3 EBITDA
+Base case
+—
+$574,776
+Lower basket
+Basket $45 instead of $55
+$174,636
+Slower growth
+Year 3 at 3,500 weekly orders
+$147,048
+Higher driver pay
+$7.00 base instead of $5.50
+$223,776
+Membership upside
+25% of orders from BuckDuck+ members
+$644,976
+12. Milestones & Roadmap
+Timeline
+Milestone
+Month 0–1
+Incorporate; deploy platform; connect Stripe live keys and Apple Pay domain; insurance and contracts
+Month 1–3
+Sign 20+ anchor stores; distribute packaging kits; recruit and onboard 15 drivers; soft launch to friends and community
+Month 3
+Public launch in the first metro
+Month 6
+300 weekly orders; launch referral program; publish native app wrappers
+Month 9
+600 weekly orders; launch BuckDuck+ membership
+Month 12
+900 weekly orders; weekly break-even; begin second-metro store signing
+Year 2
+Second metro live; 90 stores; promoted listings; catering and event orders; near break-even
+Year 3
+Four metros; 220 stores; 6,000 weekly orders; profitable; Series A
+13. Funding Request & Use of Funds
+BuckDuck is raising $450,000 in seed funding (SAFE or priced round) to fund 18 months of operations through first-metro break-even.
+Use of funds
+Amount
+Share
+Marketing, launch and customer acquisition
+$150,000
+33%
+Team (operations manager, part-time support)
+$110,000
+24%
+Operations, packaging inventory and driver kits
+$70,000
+16%
+Technology hardening, native app release and hosting
+$40,000
+9%
+Insurance, legal and compliance
+$40,000
+9%
+Working capital reserve
+$40,000
+9%
+Total
+$450,000
+100%
+Alternative and complementary funding sources include SBA microloans, community development financial institutions (CDFIs), minority-business grants, and accelerators focused on food or immigrant-founded companies.
+14. Risks & Mitigation
+Risk
+Impact
+Mitigation
+Slow customer adoption
+High
+Supply-first launch, community partnerships, first-order credits, referral program
+Store packing errors or stockouts
+Medium
+Live stock counts, order cutoff, bag-count verification, store scorecards
+Food safety for chilled items
+High
+Insulated liners and ice packs, cold-item bagging rules, temperature spot checks, delivery windows of 4–6 hours maximum
+Driver shortage on Saturdays
+Medium
+Predictable shifts, strong per-hour pay, standby driver pool, window capacity caps
+Competitor entry
+Medium
+Exclusive launch-partner terms, community brand, multi-store cart and lower store commission
+Driver classification and regulation
+Medium
+Attorney-reviewed contractor agreements, state-by-state review before each expansion
+Payment fraud and chargebacks
+Low
+Stripe Radar, 3-D Secure, wallets (Apple Pay / Google Pay) with built-in authentication
+15. Legal & Compliance
+Business formation: Delaware C-Corp with founder vesting, IP assignment and an option pool.
+Payments: Stripe as payment facilitator; BuckDuck stores no card data. Stripe Connect handles store identity verification (KYC) and 1099-K reporting.
+Sales tax: grocery is exempt or reduced in many states; prepared foods may be taxable. The platform supports a configurable tax rate; confirm marketplace-facilitator obligations per state with a tax advisor.
+Food safety: partner stores hold their own retail food permits; BuckDuck publishes and enforces cold-chain handling standards.
+Insurance: general liability, commercial auto / hired and non-owned auto, cyber liability and occupational accident coverage for drivers.
+Terms and privacy: customer terms, merchant agreement, driver agreement and privacy policy (CCPA-ready).
+Trademarks: file for BuckDuck and StoreFront USA marks and secure matching domains and social handles.
+Sources
+Brick Meets Click, reported by SDCExec — "U.S. eGrocery Sales Surge to Record $12.7B in December 2025" (sdcexec.com)
+Migration Policy Institute — "Sub-Saharan African Immigrants in the United States" (migrationpolicy.org, 2025)
+IBISWorld — "Ethnic Supermarkets in the US: Market Size" (ibisworld.com, 2025)

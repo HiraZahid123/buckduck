@@ -1,0 +1,279 @@
+PROJECT PROPOSAL
+BuckDuck · StoreFront USA
+Production rebuild of the Saturday grocery-delivery marketplace: scope, technology, timeline and investment
+Document
+Detail
+Prepared for
+Paa, Founder & CEO, BuckDuck
+Prepared by
+Hira Zahid
+Date
+October 2026
+Version
+1.0
+Validity
+30 days from the date above
+1. Executive Summary3
+2. Why We Are Rebuilding, Not Patching3
+3. Scope of Work (Release 1)3
+3.1 Public website, discovery & SEO3
+3.2 Customer accounts, cart & checkout4
+3.3 Payments & payouts (Stripe)4
+3.4 Delivery windows & order tracking4
+3.5 Merchant portal4
+3.6 Driver app (installable)4
+3.7 Admin console5
+3.8 Launch essentials5
+3.9 Not included in Release 15
+4. Recommended Technology Stack5
+4.1 Architecture approach6
+5. Delivery Plan & Timeline6
+5.1 Key milestones7
+6. Quality, Security & Compliance7
+7. Hosting & Monthly Running Costs7
+8. Optional Add-ons8
+9. Assumptions & Client Responsibilities8
+10. Support, Ownership & Next Steps9
+1. Executive Summary
+The current BuckDuck prototype proves the business model: one cart across many specialty stores, a weekly Saturday delivery window, stores packing in BuckDuck bags, and drivers delivering batched routes. It is a proof of concept, though, and it is not built to take real customers, real payments or Friday-night traffic.
+We propose rebuilding the platform from scratch on a production stack: Next.js, NestJS, PostgreSQL and Stripe. The rebuild covers the full marketplace for customers, stores, drivers and operations. It also includes the items a live business cannot launch without: password reset, email/SMS/push notifications, real-time order alerts for stores, real Google Maps navigation for drivers, fast photo uploads, backups and a privacy flow.
+At a glance
+Scope
+Customer website & installable app, merchant portal, driver app, admin console, Stripe payments & payouts, notifications
+Technology
+Next.js · NestJS · PostgreSQL · Redis · Stripe
+Hosting
+Hostinger KVM 2 VPS (see Section 7 for running costs)
+Timeline
+5 weeks to production launch
+Investment
+$5,000 (fixed price)
+Support
+1 month of free post-launch support
+Optional add-ons
+Native iOS/Android apps, route optimisation, membership & promos, and more (Section 8)
+2. Why We Are Rebuilding, Not Patching
+The existing codebase is a small prototype: Python services on a single-file SQLite database with a vanilla-JavaScript front end. Patching it would cost more than rebuilding it properly, and it would carry these risks into production:
+Invisible to Google: the signed-in app renders in the browser, and SEO depends on hand-written templates.
+Silent orders: stores get no alerts, chimes or push notifications and must refresh the page.
+Friday rush failures: SQLite allows one write at a time, so simultaneous checkouts lock up.
+Simulated routing: the driver route line is generated, not real map data.
+Blocking uploads: photo uploads freeze the server for other users.
+Missing launch basics: no password reset, email verification, notifications, backups or audit log.
+We will reuse what the prototype got right: the business rules, pricing formulas, order lifecycle and screen flows.
+3. Scope of Work (Release 1)
+Release 1 is everything below. Each item is accepted against the agreed acceptance scenarios before launch.
+3.1 Public website, discovery & SEO
+Server-rendered home, store directory, category, store, product, search and information pages (How it works, Sell, Drive)
+Full SEO: unique meta, canonical URLs, Open Graph, structured data (Organization, GroceryStore, Product/Offer, Breadcrumb, FAQ), live sitemap.xml, robots.txt, 301 redirects
+Add-to-cart from any listing; cart count in header
+Target Lighthouse SEO ≥ 95 and Accessibility ≥ 90 on mobile
+3.2 Customer accounts, cart & checkout
+Sign up, sign in, profile, order history, saved addresses, rate-limited login
+Password reset and email verification
+Multi-store cart grouped by store with bag estimates; all prices and fees calculated on the server
+Saturday window selection with live capacity and cutoff; ZIP-code service areas; driver tip; minimum order
+One payment creates one order per store (BD-xxxxx); confirmation and receipt
+3.3 Payments & payouts (Stripe)
+Card, Apple Pay, Google Pay and Link through Stripe Payment Element; 3-D Secure
+Webhook-confirmed payments; no customer is ever charged without an order being created
+Full and partial refunds, capped at the amount paid
+Stripe Connect Express onboarding for stores; the store share is transferred automatically on delivery; transfers are held until the store is connected
+3.4 Delivery windows & order tracking
+Windows auto-published weeks ahead; delivery day, times, capacity and cutoff are configurable; admin can add special windows and pause or resume them
+Order page with status, progress timeline, driver name and vehicle, receipt; customer can cancel with a full refund until the store accepts
+3.5 Merchant portal
+Store application and approval flow
+Dashboard: order counts, bags needed for Saturday, weekly sales, earnings, top products, low-stock alerts
+Real-time order board (New → Accepted → Packing → Ready) with an audible chime and browser push for new paid orders
+Bag count on Ready; decline or cancel with automatic refund and stock restore
+Pick list and printable packing slips; product management with image upload; storefront editor with live preview; payouts page; order history
+3.6 Driver app (installable)
+Driver application, online/offline switch, push alerts for new jobs
+Job board with pay, bags and ZIP; customer address hidden until the job is accepted; first-come claiming with no double assignment
+Route list (max 12 stops) on real Google Maps, with one-tap navigation and tap-to-call
+Pickup with bag-count confirmation; delivery with a required note and photo proof
+Earnings: lifetime, by delivery day, tips, recent deliveries
+3.7 Admin console
+Overview: GMV, net revenue, orders, average order value, Saturday pipeline, capacity, top stores, payment mix, alerts
+Orders: search, filter, assign driver, override status, refunds with reason
+Live dispatch board; stores (approve, suspend, commission); users; drivers; delivery windows
+Finance settlement by delivery day; all business settings (fees, commission, driver pay, windows, ZIPs) editable without code
+3.8 Launch essentials
+Transactional email (receipts, password reset, order updates) and SMS updates at placed, ready, out for delivery and delivered
+Real-time updates for the merchant board, dispatch board and customer tracking
+Web push notifications for stores and drivers
+CSV export of orders and finance; admin audit log
+Automated daily database and media backups; privacy policy page and data-deletion flow (CCPA-ready)
+Error monitoring, uptime alerts and structured logs
+3.9 Not included in Release 1
+Native App Store / Google Play apps (add-on A1). Release 1 apps are installable web apps (PWA) on any phone.
+Route optimisation, membership, promo/referral codes, ratings & reviews, background checks, bulk CSV import, store staff accounts, multi-city tooling (Section 8 add-ons)
+Content writing, product photography, store data entry and marketing
+Legal texts (terms, privacy policy, driver and merchant agreements). We implement them; your advisors write and approve them.
+4. Recommended Technology Stack
+Layer
+Technology
+Why
+Web front end
+Next.js (React, TypeScript), Tailwind CSS
+Server-side rendering for SEO; one codebase for website, customer app, merchant, driver and admin; installable PWA
+Back-end API
+NestJS (Node.js, TypeScript)
+Structured modules, built-in validation and role guards, API docs; same language as the front end
+Database
+PostgreSQL + Prisma ORM
+Handles concurrent checkouts safely with transactions and row locking
+Cache & jobs
+Redis + BullMQ
+Capacity counters, rate limits, background jobs (emails, SMS, payouts, images) with retries
+Real-time
+Socket.IO (WebSockets) + Web Push
+Live order boards, dispatch and tracking; chimes and push alerts
+Payments
+Stripe Payments, Connect Express, Radar
+Card, Apple Pay, Google Pay, 3-D Secure; store payouts; fraud screening; card data never touches our servers
+Maps
+Google Maps Platform
+Address autocomplete, real driver routes and navigation
+Notifications
+Resend or SMTP (email), Twilio (SMS)
+Reliable transactional messages
+Files & media
+Stored on the VPS, served by Nginx with Cloudflare caching
+Images and photo proof are processed in the background, so uploads never slow down other users
+Hosting
+Hostinger KVM VPS (Docker, Nginx, free SSL)
+Low, predictable monthly cost with full control; easy to upgrade the plan as traffic grows
+Quality & ops
+GitHub Actions CI/CD, automated tests, Sentry, uptime monitoring
+Automated testing and deploys; fast error detection
+4.1 Architecture approach
+We will build one NestJS application with strictly separated modules: identity, catalog, orders, payments, delivery and notifications. They share one PostgreSQL database. This "modular monolith" keeps clear boundaries between parts of the business with far less hosting, deployment and debugging overhead than separate microservices. That makes it faster to build, cheap to run on a single VPS, and easier to maintain. Background queues keep slow work (emails, payouts, image processing) off the customer's request. Any module can be split into its own service later if scale requires it.
+5. Delivery Plan & Timeline
+5 weeks from kickoff to production launch, followed by 1 month of free support. Work streams run in parallel.
+Phase
+Week
+Key activities
+Deliverables
+1. Design & foundation
+1
+Scope walkthrough, UX flows, key screen designs, server setup, CI/CD, database schema, auth & roles, settings
+Approved designs; server live
+2. Catalog, website & checkout
+2
+Stores, products, image uploads, SEO website, search, sitemap, delivery windows, pricing engine, multi-store cart
+Browsable SEO website with working cart
+3. Payments & merchant portal
+3
+Stripe payments, webhooks, refunds, Connect onboarding; real-time order board with chime/push, pick lists, payouts
+End-to-end paid order (test mode); merchant portal
+4. Driver app, admin & notifications
+4
+Driver job board, Google Maps routes, proof of delivery, earnings; admin console, dispatch, finance, CSV export, audit log; email/SMS/push
+Feature-complete platform
+5. QA, UAT & launch
+5
+Full testing, Friday-rush load test, security review, UAT with pilot stores, live Stripe keys, go-live
+Production launch
+Free support
++1 month
+Bug fixes, monitoring, first live Saturdays supported, handover documentation
+Stable platform
+5.1 Key milestones
+Milestone
+Target
+M1. Designs approved, server live
+End of week 1
+M2. SEO website & cart working
+End of week 2
+M3. End-to-end paid order
+End of week 3
+M4. Feature-complete, UAT starts
+End of week 4
+M5. Production launch
+End of week 5
+M6. Free support period ends
+1 month after launch
+Note: a 5-week launch depends on fast decisions. Design approvals and UAT feedback must come back within 1 business day, and Stripe, Google and Twilio accounts must be approved by the end of week 2.
+6. Quality, Security & Compliance
+Automated tests for pricing, checkout, refunds, capacity and the order lifecycle; every acceptance scenario is run before launch
+Load test simulating the Friday-evening rush, with zero failed paid checkouts as the target
+HTTPS everywhere, hashed passwords, role checks on every endpoint, rate limiting, OWASP Top-10 review
+PCI DSS SAQ A: card data is entered only in Stripe-hosted fields
+Daily automated database and media backups, plus Hostinger’s built-in weekly VPS snapshot; WCAG 2.1 AA accessibility
+Full source code and documentation handed over to BuckDuck
+7. Hosting & Monthly Running Costs
+Paid by BuckDuck directly to each provider. Prices are current list prices in USD at the time of writing and may change. The Hostinger price shown is the 24-month plan rate, with the renewal rate in brackets.
+Item
+Plan
+Cost
+Server (website, app, database, images & backups)
+Hostinger KVM 2 VPS (2 vCPU, 8 GB RAM, 100 GB NVMe)
+$8.99/mo ($14.99/mo on renewal)
+Domain name
+.com domain (Hostinger)
+≈ $10–15 / year
+SSL certificate
+Let's Encrypt
+Free
+CDN & DNS
+Cloudflare Free plan
+Free
+Transactional email
+Resend (free up to 3,000 emails/mo; Pro $20/mo for 50,000) or any SMTP mailbox
+$0 – $20/mo
+SMS
+Twilio US SMS (≈ $0.0083/message + carrier fees ≈ $0.003) + local number $1.15/mo + 10DLC registration
+≈ $25–60/mo at launch volume (one-time brand registration ≈ $4–46)
+Maps
+Google Maps Platform (monthly free usage per API)
+$0 at launch volume
+Error monitoring
+Sentry Developer plan
+Free
+Card payments
+Stripe
+2.9% + $0.30 per successful card charge
+Store payouts
+Stripe Connect Express
+$2 per active store/month + 0.25% + $0.25 per payout
+Estimated fixed total
+Excluding Stripe transaction fees
+≈ $35 – $90/mo
+As order volume grows, the production server can be upgraded to Hostinger KVM 4 or KVM 8 in a few minutes without code changes.
+8. Optional Add-ons
+These can be added to Release 1 or scheduled after launch, and are quoted separately on request.
+#
+Add-on
+A1
+Native iOS & Android apps (React Native) for customers and drivers, including App Store and Google Play publishing
+A2
+Route optimisation for multi-stop driver routes
+A3
+BuckDuck+ membership, promo codes, gift cards and referrals
+A4
+Ratings, reviews and item issue reporting
+A5
+Automated weekly driver payouts
+A6
+Driver background checks and document upload
+A7
+Bulk product import (CSV) and store staff accounts
+A8
+Multi-city / multi-zone operations
+A9
+Recurring weekly baskets and recipe bundles
+A10
+Growth analytics: funnel and cohort retention dashboard
+9. Assumptions & Client Responsibilities
+Scope is as described in Section 3. Changes go through a simple change-request process.
+BuckDuck provides feedback quickly: design approvals and UAT feedback within 1 business day.
+BuckDuck owns and provides access to third-party accounts: Hostinger, Stripe (with live approval), Google Cloud, Twilio, Resend or SMTP mailbox, Cloudflare, domain and Apple Pay domain verification.
+BuckDuck provides branding assets, legal texts and initial store and product data, or pilot stores enter their own.
+The prototype is used as a functional reference only. No code or data is migrated unless agreed.
+Launch is one metro (Houston, TX) on a single delivery day, with English-only content and USD.
+10. Support, Ownership & Next Steps
+Free support: 1 month after launch. This covers bug fixes, monitoring and help through the first live Saturdays.
+Ownership: all source code, designs and documentation are handed over to BuckDuck.
+Next steps: (1) review this proposal together; (2) confirm scope and any add-ons; (3) sign the agreement; (4) kickoff and discovery workshop.

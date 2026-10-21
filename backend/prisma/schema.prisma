@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model checkouts {
+  id                Int      @id @default(autoincrement())
+  customer_id       Int
+  total_cents       Int
+  payment_status    String   @default("pending")
+  payment_intent_id String?
+  payment_method    String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime
+  users             users    @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  orders            orders[]
+}
+
+model delivery_windows {
+  id         Int      @id @default(autoincrement())
+  date       String
+  start_time String
+  end_time   String
+  label      String
+  capacity   Int      @default(120)
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime
+  orders     orders[]
+
+  @@unique([date, start_time])
+}
+
+model order_events {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  status     String
+  note       String?
+  actor      String   @default("system")
+  created_at DateTime @default(now())
+  orders     orders   @relation(fields: [order_id], references: [id], onDelete: Cascade)
+}
+
+model order_items {
+  id          Int       @id @default(autoincrement())
+  order_id    Int
+  product_id  Int?
+  name        String
+  emoji       String?
+  unit        String?
+  price_cents Int
+  qty         Int
+  orders      orders    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  products    products? @relation(fields: [product_id], references: [id])
+}
+
+model orders {
+  id                              Int              @id @default(autoincrement())
+  number                          String           @unique
+  checkout_id                     Int?
+  customer_id                     Int
+  store_id                        Int
+  window_id                       Int
+  driver_id                       Int?
+  status                          String           @default("pending_payment")
+  subtotal_cents                  Int              @default(0)
+  delivery_fee_cents              Int              @default(0)
+  service_fee_cents               Int              @default(0)
+  tax_cents                       Int              @default(0)
+  tip_cents                       Int              @default(0)
+  total_cents                     Int              @default(0)
+  commission_cents                Int              @default(0)
+  driver_pay_cents                Int              @default(0)
+  bags                            Int              @default(1)
+  address_line1                   String?
+  address_line2                   String?
+  city                            String?
+  state                           String?
+  zip                             String?
+  phone                           String?
+  notes                           String?
+  proof_note                      String?
+  proof_photo_url                 String?
+  transfer_id                     String?
+  created_at                      DateTime         @default(now())
+  updated_at                      DateTime
+  order_events                    order_events[]
+  order_items                     order_items[]
+  checkouts                       checkouts?       @relation(fields: [checkout_id], references: [id])
+  users_orders_customer_idTousers users            @relation("orders_customer_idTousers", fields: [customer_id], references: [id], onDelete: Cascade)
+  users_orders_driver_idTousers   users?           @relation("orders_driver_idTousers", fields: [driver_id], references: [id])
+  stores                          stores           @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  delivery_windows                delivery_windows @relation(fields: [window_id], references: [id], onDelete: Cascade)
+}
+
+model products {
+  id          Int           @id @default(autoincrement())
+  store_id    Int
+  name        String
+  description String?
+  category    String        @default("General")
+  price_cents Int
+  unit        String?
+  stock       Int           @default(0)
+  emoji       String?       @default("🛒")
+  image_url   String?
+  active      Boolean       @default(true)
+  created_at  DateTime      @default(now())
+  updated_at  DateTime
+  order_items order_items[]
+  stores      stores        @relation(fields: [store_id], references: [id], onDelete: Cascade)
+}
+
+model settings {
+  key   String @id
+  value String
+}
+
+model stores {
+  id                     Int        @id @default(autoincrement())
+  owner_id               Int
+  name                   String
+  slug                   String     @unique
+  tagline                String?
+  description            String?
+  category               String     @default("Groceries")
+  address                String?
+  city                   String     @default("Silver Spring")
+  state                  String     @default("MD")
+  zip                    String     @default("20910")
+  phone                  String?
+  color                  String     @default("#1E3A8A")
+  emoji                  String     @default("🛒")
+  logo_url               String?
+  status                 String     @default("pending")
+  commission_rate        Float      @default(0.15)
+  stripe_account_id      String?
+  stripe_charges_enabled Boolean    @default(false)
+  rating                 Float      @default(4.9)
+  created_at             DateTime   @default(now())
+  updated_at             DateTime
+  orders                 orders[]
+  products               products[]
+  users                  users      @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+}
+
+model users {
+  id                               Int         @id @default(autoincrement())
+  email                            String      @unique
+  password_hash                    String
+  name                             String
+  role                             String
+  phone                            String?
+  status                           String      @default("active")
+  driver_online                    Boolean     @default(false)
+  vehicle                          String?
+  created_at                       DateTime    @default(now())
+  updated_at                       DateTime
+  checkouts                        checkouts[]
+  orders_orders_customer_idTousers orders[]    @relation("orders_customer_idTousers")
+  orders_orders_driver_idTousers   orders[]    @relation("orders_driver_idTousers")
+  stores                           stores[]
+}

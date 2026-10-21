@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1090" viewBox="0 0 2400 1090">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#081736"/><stop offset=".55" stop-color="#0B1F4B"/><stop offset="1" stop-color="#0E2A63"/></linearGradient>
+  <radialGradient id="glow1" cx=".22" cy=".25" r=".5"><stop offset="0" stop-color="#2563EB" stop-opacity=".35"/><stop offset="1" stop-color="#2563EB" stop-opacity="0"/></radialGradient>
+  <radialGradient id="glow2" cx=".85" cy=".9" r=".45"><stop offset="0" stop-color="#D4A017" stop-opacity=".22"/><stop offset="1" stop-color="#D4A017" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F7E08B"/><stop offset=".42" stop-color="#D4A017"/><stop offset=".7" stop-color="#9E7410"/><stop offset="1" stop-color="#E8BC3A"/></linearGradient>
+  <filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".3"/></filter>
+  <filter id="shL" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000" flood-opacity=".4"/></filter>
+</defs>
+<rect width="2400" height="1090" fill="url(#bg)"/><rect width="2400" height="1090" fill="url(#glow1)"/><rect width="2400" height="1090" fill="url(#glow2)"/>
+<g opacity=".06" stroke="#FFFFFF"><line x1="0" y1="0" x2="0" y2="1090"/><line x1="100" y1="0" x2="100" y2="1090"/><line x1="200" y1="0" x2="200" y2="1090"/><line x1="300" y1="0" x2="300" y2="1090"/><line x1="400" y1="0" x2="400" y2="1090"/><line x1="500" y1="0" x2="500" y2="1090"/><line x1="600" y1="0" x2="600" y2="1090"/><line x1="700" y1="0" x2="700" y2="1090"/><line x1="800" y1="0" x2="800" y2="1090"/><line x1="900" y1="0" x2="900" y2="1090"/><line x1="1000" y1="0" x2="1000" y2="1090"/><line x1="1100" y1="0" x2="1100" y2="1090"/><line x1="1200" y1="0" x2="1200" y2="1090"/><line x1="1300" y1="0" x2="1300" y2="1090"/><line x1="1400" y1="0" x2="1400" y2="1090"/><line x1="1500" y1="0" x2="1500" y2="1090"/><line x1="1600" y1="0" x2="1600" y2="1090"/><line x1="1700" y1="0" x2="1700" y2="1090"/><line x1="1800" y1="0" x2="1800" y2="1090"/><line x1="1900" y1="0" x2="1900" y2="1090"/><line x1="2000" y1="0" x2="2000" y2="1090"/><line x1="2100" y1="0" x2="2100" y2="1090"/><line x1="2200" y1="0" x2="2200" y2="1090"/><line x1="2300" y1="0" x2="2300" y2="1090"/><line x1="2400" y1="0" x2="2400" y2="1090"/><line x1="0" y1="0" x2="2400" y2="0"/><line x1="0" y1="100" x2="2400" y2="100"/><line x1="0" y1="200" x2="2400" y2="200"/><line x1="0" y1="300" x2="2400" y2="300"/><line x1="0" y1="400" x2="2400" y2="400"/><line x1="0" y1="500" x2="2400" y2="500"/><line x1="0" y1="600" x2="2400" y2="600"/><line x1="0" y1="700" x2="2400" y2="700"/><line x1="0" y1="800" x2="2400" y2="800"/><line x1="0" y1="900" x2="2400" y2="900"/><line x1="0" y1="1000" x2="2400" y2="1000"/><line x1="0" y1="1100" x2="2400" y2="1100"/></g>
+<g transform="translate(110 92)"><rect width="56" height="56" rx="15" fill="#0B1F4B" stroke="url(#gold)" stroke-width="3"/><g transform="rotate(0 28 30)">
+  <path d="M22 17 v-4.760000000000001 a7.800000000000001 7.800000000000001 0 0 1 12 0 v4.760000000000001" fill="none" stroke="#9E7410" stroke-width="1.65" stroke-linecap="round"/>
+  <path d="M13 13 h30 l-1.7999999999999998 34 h-26.4 z" fill="url(#gold)"/>
+  <path d="M13 13 h30 l-0.3 4.760000000000001 h-29.4 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="26.2" cy="31.700000000000003" r="5.1000000000000005" fill="#0B1F4B"/><path d="M30.4 30.34 l6 1.7000000000000002 l-6 2.3800000000000003 z" fill="#0B1F4B"/>
+  <circle cx="27.4" cy="30" r="1.05" fill="#F7E08B"/></g></g>
+<text x="186" y="133" font-family="Fraunces, Georgia, serif" font-weight="800" font-size="46" fill="#FFFFFF">Buck<tspan fill="#E8BC3A">Duck</tspan></text>
+<text x="2290" y="128" text-anchor="end" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700" font-size="24" letter-spacing="4" fill="#E8BC3A">ONE CART · MANY STORES · DELIVERED SATURDAY</text>
+<line x1="110" y1="808" x2="2290" y2="808" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
+<g filter="url(#shL)"><rect x="205" y="245" width="250" height="500" rx="40" fill="#0A1430"/><rect x="217" y="257" width="226" height="476" rx="30" fill="#F8FAFC"/></g>
+  <rect x="300" y="269" width="60" height="10" rx="5" fill="#0A1430"/>
+  <rect x="217" y="291" width="226" height="74" fill="#0B1F4B"/>
+  <circle cx="251" cy="328" r="16" fill="url(#gold)"/><rect x="277" y="317" width="90" height="10" rx="5" fill="#FFFFFF"/><rect x="277" y="333" width="60" height="8" rx="4" fill="#E8BC3A"/>
+  <rect x="233" y="385" width="194" height="60" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="263" cy="415" r="18" fill="#38B26A"/><rect x="291" y="403" width="70" height="9" rx="4.5" fill="#334155"/><rect x="291" y="419" width="44" height="8" rx="4" fill="#94A3B8"/><rect x="381" y="403" width="30" height="24" rx="8" fill="#2563EB"/><rect x="233" y="459" width="194" height="60" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="263" cy="489" r="18" fill="#E25C3B"/><rect x="291" y="477" width="70" height="9" rx="4.5" fill="#334155"/><rect x="291" y="493" width="44" height="8" rx="4" fill="#94A3B8"/><rect x="381" y="477" width="30" height="24" rx="8" fill="#2563EB"/><rect x="233" y="533" width="194" height="60" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="263" cy="563" r="18" fill="#D59A4A"/><rect x="291" y="551" width="70" height="9" rx="4.5" fill="#334155"/><rect x="291" y="567" width="44" height="8" rx="4" fill="#94A3B8"/><rect x="381" y="551" width="30" height="24" rx="8" fill="#2563EB"/>
+  <rect x="233" y="613" width="194" height="44" rx="12" fill="#DBEAFE"/><rect x="249" y="629" width="22" height="12" rx="3" fill="#2563EB"/><rect x="281" y="630" width="100" height="9" rx="4.5" fill="#12306B"/>
+  <rect x="233" y="669" width="194" height="48" rx="24" fill="url(#gold)"/><rect x="285" y="688" width="90" height="10" rx="5" fill="#0B1F4B"/>
+  <rect x="355" y="209" width="210" height="46" rx="23" fill="#FFFFFF" filter="url(#sh)"/><text x="460" y="239" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700" font-size="21" fill="#0B1F4B">✓  Order placed</text>
+  <g transform="translate(135 545)"><circle r="44" fill="#12306B" stroke="#3B82F6" stroke-width="3"/><text y="14" text-anchor="middle" font-family="Plus Jakarta Sans, Arial" font-weight="800" font-size="38" fill="#E8BC3A">$</text></g><g filter="url(#shL)"><rect x="700" y="340" width="470" height="400" rx="10" fill="#F1F5F9"/></g>
+  <rect x="690" y="300" width="490" height="50" rx="10" fill="#0B1F4B"/><text x="935" y="334" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="26" fill="#E8BC3A" letter-spacing="2">MARKET</text>
+  <path d="M680 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#2563EB"/><path d="M743.75 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#FFFFFF"/><path d="M807.5 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#2563EB"/><path d="M871.25 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#FFFFFF"/><path d="M935 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#2563EB"/><path d="M998.75 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#FFFFFF"/><path d="M1062.5 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#2563EB"/><path d="M1126.25 340 h63.75 v52 a31.875 22 0 0 1 -63.75 0 z" fill="#FFFFFF"/>
+  <rect x="736" y="440" width="170" height="150" rx="8" fill="#DBEAFE" stroke="#12306B" stroke-width="6"/><path d="M821 440 v150 M736 515 h170" stroke="#12306B" stroke-width="4"/>
+  <rect x="970" y="440" width="160" height="300" rx="6" fill="#12306B"/><circle cx="1104" cy="580" r="7" fill="#E8BC3A"/>
+  <rect x="660" y="630" width="550" height="30" rx="8" fill="#0B1F4B"/><rect x="674" y="660" width="522" height="100" fill="#12306B"/>
+  <g transform="rotate(-3 790 557)">
+  <path d="M766 486 v-21.000000000000004 a31.200000000000003 31.200000000000003 0 0 1 48 0 v21.000000000000004" fill="none" stroke="#9E7410" stroke-width="6.6" stroke-linecap="round"/>
+  <path d="M730 482 h120 l-7.199999999999999 150 h-105.6 z" fill="url(#gold)"/>
+  <path d="M730 482 h120 l-1.2 21.000000000000004 h-117.6 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="782.8" cy="564.5" r="20.400000000000002" fill="#0B1F4B"/><path d="M799.6 558.5 l24 7.5 l-24 10.500000000000002 z" fill="#0B1F4B"/>
+  <circle cx="787.6" cy="557" r="4.2" fill="#F7E08B"/></g><g transform="translate(770 468) scale(1)"><ellipse cx="0" cy="0" rx="16" ry="30" fill="#2F9E5B" transform="rotate(-20)"/><ellipse cx="14" cy="-4" rx="14" ry="28" fill="#38B26A" transform="rotate(18 14 -4)"/><ellipse cx="-14" cy="2" rx="12" ry="24" fill="#26874C" transform="rotate(-38 -14 2)"/></g><g transform="translate(825 490) rotate(-58) scale(0.8)"><rect x="-10" y="-60" width="20" height="120" rx="10" fill="#D59A4A"/><path d="M-6 -36 l12 -8 M-6 -10 l12 -8 M-6 16 l12 -8 M-6 40 l12 -8" stroke="#A86C2C" stroke-width="3" stroke-linecap="round"/></g>
+  <g transform="rotate(2 945 549.5)">
+  <path d="M919 471 v-23.1 a33.800000000000004 33.800000000000004 0 0 1 52 0 v23.1" fill="none" stroke="#9E7410" stroke-width="7.15" stroke-linecap="round"/>
+  <path d="M880 467 h130 l-7.8 165 h-114.4 z" fill="url(#gold)"/>
+  <path d="M880 467 h130 l-1.3 23.1 h-127.39999999999999 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="937.2" cy="557.75" r="22.1" fill="#0B1F4B"/><path d="M955.4 551.15 l26 8.25 l-26 11.55 z" fill="#0B1F4B"/>
+  <circle cx="942.4" cy="549.5" r="4.550000000000001" fill="#F7E08B"/></g>
+  <g filter="url(#sh)"><rect x="1030" y="496" width="120" height="140" rx="14" fill="#FFFFFF"/><rect x="1046" y="514" width="88" height="22" rx="6" fill="#2563EB"/>
+  <rect x="1046" y="550" width="16" height="16" rx="4" fill="#22C55E"/><path d="M1049 558 l4 4 l7 -8" stroke="#fff" stroke-width="3" fill="none"/><rect x="1070" y="554" width="60" height="8" rx="4" fill="#94A3B8"/><rect x="1046" y="574" width="16" height="16" rx="4" fill="#22C55E"/><path d="M1049 582 l4 4 l7 -8" stroke="#fff" stroke-width="3" fill="none"/><rect x="1070" y="578" width="60" height="8" rx="4" fill="#94A3B8"/><rect x="1046" y="598" width="16" height="16" rx="4" fill="#22C55E"/><path d="M1049 606 l4 4 l7 -8" stroke="#fff" stroke-width="3" fill="none"/><rect x="1070" y="602" width="60" height="8" rx="4" fill="#94A3B8"/></g>
+  <rect x="990" y="236" width="200" height="46" rx="23" fill="#2563EB" filter="url(#sh)"/><text x="1090" y="266" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700" font-size="21" fill="#FFFFFF">New order ●</text><ellipse cx="1580" cy="732" rx="270" ry="18" fill="#000" opacity=".25"/>
+  <g filter="url(#shL)"><path d="M1330 500 q0 -30 30 -30 h290 q24 0 36 22 l70 118 q10 18 10 38 v62 q0 22 -22 22 h-392 q-22 0 -22 -22 z" fill="#FFFFFF"/></g>
+  <path d="M1685 500 l56 98 h-108 v-98 z" fill="#DBEAFE" stroke="#12306B" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="1676" cy="550" r="16" fill="#0B1F4B"/><path d="M1652 598 q24 -38 48 0 z" fill="#0B1F4B"/>
+  <rect x="1330" y="616" width="498" height="50" fill="#0B1F4B"/><rect x="1330" y="616" width="498" height="6" fill="url(#gold)"/>
+  <rect x="1350" y="500" width="270" height="100" rx="12" fill="#0B1F4B"/>
+  <g transform="rotate(-6 1398 557)">
+  <path d="M1385.2 520 v-11.48 a16.64 16.64 0 0 1 25.6 0 v11.48" fill="none" stroke="#9E7410" stroke-width="3.52" stroke-linecap="round"/>
+  <path d="M1366 516 h64 l-3.84 82 h-56.32 z" fill="url(#gold)"/>
+  <path d="M1366 516 h64 l-0.64 11.48 h-62.72 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="1394.16" cy="561.1" r="10.88" fill="#0B1F4B"/><path d="M1403.12 557.82 l12.8 4.1000000000000005 l-12.8 5.74 z" fill="#0B1F4B"/>
+  <circle cx="1396.72" cy="557" r="2.24" fill="#F7E08B"/></g><g transform="rotate(3 1473 552)">
+  <path d="M1459 510 v-12.88 a18.2 18.2 0 0 1 28 0 v12.88" fill="none" stroke="#9E7410" stroke-width="3.85" stroke-linecap="round"/>
+  <path d="M1438 506 h70 l-4.2 92 h-61.6 z" fill="url(#gold)"/>
+  <path d="M1438 506 h70 l-0.7000000000000001 12.88 h-68.6 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="1468.8" cy="556.6" r="11.9" fill="#0B1F4B"/><path d="M1478.6 552.92 l14 4.6000000000000005 l-14 6.44 z" fill="#0B1F4B"/>
+  <circle cx="1471.6" cy="552" r="2.45" fill="#F7E08B"/></g><g transform="rotate(-2 1548 557)">
+  <path d="M1535.2 520 v-11.48 a16.64 16.64 0 0 1 25.6 0 v11.48" fill="none" stroke="#9E7410" stroke-width="3.52" stroke-linecap="round"/>
+  <path d="M1516 516 h64 l-3.84 82 h-56.32 z" fill="url(#gold)"/>
+  <path d="M1516 516 h64 l-0.64 11.48 h-62.72 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="1544.16" cy="561.1" r="10.88" fill="#0B1F4B"/><path d="M1553.12 557.82 l12.8 4.1000000000000005 l-12.8 5.74 z" fill="#0B1F4B"/>
+  <circle cx="1546.72" cy="557" r="2.24" fill="#F7E08B"/></g>
+  <text x="1580" y="652" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="800" font-size="24" fill="#FFFFFF">Buck<tspan fill="#E8BC3A">Duck</tspan></text>
+  <rect x="1800" y="630" width="30" height="18" rx="5" fill="#E8BC3A"/>
+  <circle cx="1440" cy="692" r="44" fill="#0A1430"/><circle cx="1440" cy="692" r="20" fill="#CBD5E1"/><circle cx="1440" cy="692" r="7" fill="#0B1F4B"/><circle cx="1720" cy="692" r="44" fill="#0A1430"/><circle cx="1720" cy="692" r="20" fill="#CBD5E1"/><circle cx="1720" cy="692" r="7" fill="#0B1F4B"/>
+  <g transform="translate(1580 360)" filter="url(#sh)"><path d="M0 60 c-36 -40 -48 -56 -48 -84 a48 48 0 0 1 96 0 c0 28 -12 44 -48 84z" fill="#2563EB"/><circle cy="-24" r="20" fill="#FFFFFF"/><g transform="rotate(0 0 -27)">
+  <path d="M-4.4 -36 v-3.6400000000000006 a5.720000000000001 5.720000000000001 0 0 1 8.8 0 v3.6400000000000006" fill="none" stroke="#9E7410" stroke-width="1.21" stroke-linecap="round"/>
+  <path d="M-11 -40 h22 l-1.3199999999999998 26 h-19.36 z" fill="url(#gold)"/>
+  <path d="M-11 -40 h22 l-0.22 3.6400000000000006 h-21.56 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="-1.3200000000000003" cy="-25.7" r="3.74" fill="#0B1F4B"/><path d="M1.7599999999999998 -26.740000000000002 l4.4 1.3 l-4.4 1.8200000000000003 z" fill="#0B1F4B"/>
+  <circle cx="-0.4400000000000013" cy="-27" r="0.77" fill="#F7E08B"/></g></g>
+  <rect x="1630" y="320" width="190" height="46" rx="23" fill="#FFFFFF" filter="url(#sh)"/><text x="1725" y="350" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700" font-size="21" fill="#0B1F4B">Pickup ✓ 3 bags</text><g filter="url(#shL)"><path d="M1940 480 L2110 350 L2280 480 V740 H1940 Z" fill="#F1F5F9"/></g>
+  <path d="M1916 490 L2110 336 L2304 490" fill="none" stroke="#0B1F4B" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+  <rect x="1980" y="530" width="96" height="90" rx="8" fill="#DBEAFE" stroke="#12306B" stroke-width="6"/><path d="M2028 530 v90 M1980 575 h96" stroke="#12306B" stroke-width="4"/>
+  <rect x="2130" y="560" width="110" height="180" rx="8" fill="#2563EB"/><circle cx="2222" cy="652" r="7" fill="#E8BC3A"/>
+  <rect x="1920" y="740" width="380" height="16" rx="8" fill="#12306B"/>
+  <!-- customer -->
+  <g transform="translate(2075 566)">
+    <path d="M-40 174 v-92 q0 -40 40 -40 q40 0 40 40 v92 z" fill="#0B1F4B"/><rect x="-30" y="174" width="24" height="0" fill="#0B1F4B"/>
+    <circle cx="0" cy="12" r="30" fill="#8D5A3B"/><path d="M-30 6 q0 -36 30 -36 q32 0 32 34 q-16 -12 -32 -12 q-18 0 -30 14z" fill="#1F1309"/>
+    <path d="M30 80 q36 6 44 40" fill="none" stroke="#0B1F4B" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <g transform="rotate(4 2176 688)">
+  <path d="M2156 630 v-17.360000000000003 a26 26 0 0 1 40 0 v17.360000000000003" fill="none" stroke="#9E7410" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M2126 626 h100 l-6 124 h-88 z" fill="url(#gold)"/>
+  <path d="M2126 626 h100 l-1 17.360000000000003 h-98 z" fill="#9E7410" opacity=".35"/>
+  <circle cx="2170" cy="694.2" r="17" fill="#0B1F4B"/><path d="M2184 689.24 l20 6.2 l-20 8.680000000000001 z" fill="#0B1F4B"/>
+  <circle cx="2174" cy="688" r="3.5000000000000004" fill="#F7E08B"/></g>
+  <g transform="translate(2270 370)" filter="url(#sh)"><circle r="40" fill="#22C55E"/><path d="M-18 0 l12 12 l24 -26" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <rect x="1930" y="280" width="230" height="46" rx="23" fill="#FFFFFF" filter="url(#sh)"/><text x="2045" y="310" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="700" font-size="21" fill="#0B1F4B">Sat · 6 AM – 12 PM</text>
+<path d="M520 560 C 580 490, 580 490, 640 560" fill="none" stroke="#D4A017" stroke-width="5" stroke-dasharray="4 14" stroke-linecap="round"/><path d="M620 538 L642 561 L612 566" fill="none" stroke="#D4A017" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1230 600 C 1290 530, 1270 530, 1330 600" fill="none" stroke="#D4A017" stroke-width="5" stroke-dasharray="4 14" stroke-linecap="round"/><path d="M1310 578 L1332 601 L1302 606" fill="none" stroke="#D4A017" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1860 600 C 1920 530, 1890 530, 1950 600" fill="none" stroke="#D4A017" stroke-width="5" stroke-dasharray="4 14" stroke-linecap="round"/><path d="M1930 578 L1952 601 L1922 606" fill="none" stroke="#D4A017" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="330" cy="905" r="30" fill="url(#gold)"/><circle cx="330" cy="905" r="30" fill="none" stroke="#F7E08B" stroke-width="2" opacity=".6"/><text x="330" y="916" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800" font-size="30" fill="#0B1F4B">1</text><text x="330" y="985" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="40" fill="#FFFFFF">Customer orders</text><text x="330" y="1028" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="600" font-size="22" letter-spacing="1.5" fill="#E8BC3A">APP OR WEBSITE</text><circle cx="935" cy="905" r="30" fill="url(#gold)"/><circle cx="935" cy="905" r="30" fill="none" stroke="#F7E08B" stroke-width="2" opacity=".6"/><text x="935" y="916" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800" font-size="30" fill="#0B1F4B">2</text><text x="935" y="985" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="40" fill="#FFFFFF">Store packs</text><text x="935" y="1028" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="600" font-size="22" letter-spacing="1.5" fill="#E8BC3A">BUCKDUCK BAGS</text><circle cx="1580" cy="905" r="30" fill="url(#gold)"/><circle cx="1580" cy="905" r="30" fill="none" stroke="#F7E08B" stroke-width="2" opacity=".6"/><text x="1580" y="916" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800" font-size="30" fill="#0B1F4B">3</text><text x="1580" y="985" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="40" fill="#FFFFFF">Driver picks up</text><text x="1580" y="1028" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="600" font-size="22" letter-spacing="1.5" fill="#E8BC3A">BATCHED ROUTES</text><circle cx="2110" cy="905" r="30" fill="url(#gold)"/><circle cx="2110" cy="905" r="30" fill="none" stroke="#F7E08B" stroke-width="2" opacity=".6"/><text x="2110" y="916" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="800" font-size="30" fill="#0B1F4B">4</text><text x="2110" y="985" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="40" fill="#FFFFFF">Delivered</text><text x="2110" y="1028" text-anchor="middle" font-family="Plus Jakarta Sans, Arial, sans-serif" font-weight="600" font-size="22" letter-spacing="1.5" fill="#E8BC3A">CHOSEN WINDOW</text>
+</svg>

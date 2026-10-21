@@ -1,0 +1,1102 @@
+BUSINESS REQUIREMENTS DOCUMENT
+BuckDuck
+StoreFront USA Marketplace Platform
+Requirements for the weekly Saturday grocery delivery marketplace: customer website and app, merchant portal, driver app, admin console, payments and platform services.
+Document control
+Document
+Business Requirements Document (BRD)
+Product
+BuckDuck — StoreFront USA marketplace
+Version
+1.0
+Date
+October 9, 2026
+Owner
+Paa, Founder
+Status
+Draft for review and sign-off
+Related documents
+BuckDuck Business Plan · docs/ARCHITECTURE.md · README.md
+Contents
+01     Introduction
+02     Business Context & Objectives
+03     Stakeholders & User Roles
+04     Business Process
+05     Business Requirements
+06     Functional Requirements
+07     Business Rules
+08     Non-Functional Requirements
+09     Platform Architecture
+10     Data Requirements
+11     Integrations
+12     Reporting & Analytics
+13     Assumptions, Constraints & Dependencies
+14     Risks
+15     Scope Boundaries & Future Phases
+16     Acceptance Criteria & Sign-off
+17     Appendix — Traceability Matrix
+Requirement status key
+Status
+Meaning
+Built
+Implemented in the current codebase and covered by automated or browser tests
+Built (test mode)
+Implemented; runs on Stripe test mode or the payment simulator until live keys are added
+Configurable
+Implemented as a setting the admin can change without code
+Phase 2
+Required, but planned after launch; not in the current codebase
+Priorities use MoSCoW: Must (required for launch), Should (important, can follow shortly after launch), Could (desirable), Won't (out of scope for now).
+1. Introduction
+1.1 Purpose
+This document defines what the BuckDuck platform must do for the business, for each type of user, and for operations. It is the reference for development, testing, vendor quotes and launch sign-off. Each requirement has an ID so it can be traced to code, tests and acceptance.
+1.2 Product summary
+BuckDuck is a grocery delivery marketplace. Independent grocery stores, starting with African, Caribbean, halal and specialty grocers, open storefronts on the StoreFront USA website and BuckDuck app. Customers order from one or more stores in a single cart and choose a Saturday delivery window: Morning (6 AM–12 PM) or Afternoon (12 PM–4 PM). Stores pack orders in sealed BuckDuck-branded bags. BuckDuck drivers pick up and deliver. All payments go through BuckDuck (card, Apple Pay, Google Pay), and stores are paid out automatically.
+1.3 Scope
+In scope (this release)
+Out of scope (this release)
+Public SEO website and installable mobile web app
+Customer accounts, multi-store cart, checkout and order tracking
+Saturday delivery windows with capacity and cutoffs
+Stripe payments: card, Apple Pay, Google Pay; refunds; store payouts
+Merchant portal: storefront, products, stock, order queue, payouts
+Driver app: job board, routes, pickup and proof of delivery, earnings
+Admin console: operations, dispatch, stores, users, drivers, windows, finance, settings
+Microservices platform with a database per service
+Native App Store / Google Play builds (wrapper planned)
+Email and SMS notifications (Phase 2)
+Membership, promo codes and referrals (Phase 2)
+Turn-by-turn routing and route optimization (Phase 2)
+Customer ratings and reviews (Phase 2)
+Multi-city operations tooling (Phase 2)
+BuckDuck-owned inventory or warehousing
+1.4 Glossary
+Term
+Definition
+Delivery window
+A Saturday time slot (default 6 AM–12 PM and 12 PM–4 PM) with a capacity limit and an order cutoff
+Cutoff
+The time ordering closes for a window; default 24 hours before the window starts
+Storefront
+A store's branded page on StoreFront USA listing its products
+BuckDuck bag
+Sealed, labeled BuckDuck packaging the store uses to pack each order
+Checkout
+One payment by a customer that may create several orders, one per store
+Delivery job
+A driver task to collect one order from a store and deliver it
+Commission
+BuckDuck's percentage of a store's merchandise sales (default 15%)
+GMV
+Gross merchandise value: total amount customers paid
+Microservice
+A separately deployed part of the platform with its own database
+Outbox
+A reliable way for one service to notify another: events are saved and retried until delivered
+2. Business Context & Objectives
+2.1 Problem
+Customers must visit several specialty stores, often far apart, to buy the foods they cook with. Mainstream delivery apps rarely list these stores.
+Independent grocers have no affordable way to sell online, take card and wallet payments, or offer delivery.
+Drivers on on-demand apps lose time between orders and earn unpredictably.
+2.2 Solution
+One weekly delivery day lets BuckDuck batch routes, give stores a calm packing schedule, and charge customers less per delivery while paying drivers well. A shared platform gives every store a storefront, payments and delivery without building their own.
+2.3 Business objectives
+ID
+Objective
+Measure
+Target
+OBJ-1
+Launch in the first metro with strong supply
+Active partner stores
+35 by end of Year 1
+OBJ-2
+Build a weekly ordering habit
+Weekly orders
+900 per week by month 12
+OBJ-3
+Deliver reliably
+Orders delivered inside the chosen window
+≥ 97%
+OBJ-4
+Keep orders accurate
+Orders complete and correct
+≥ 98%
+OBJ-5
+Be found by search engines
+Store and product pages indexed
+≥ 90% of listed pages within 60 days
+OBJ-6
+Reach unit profitability
+Contribution margin per order
+≥ $8 at a $55 basket
+OBJ-7
+Keep partners
+Store retention after 6 months
+≥ 90%
+3. Stakeholders & User Roles
+3.1 Stakeholders
+Stakeholder
+Interest
+Involvement
+Founder / CEO (Paa)
+Business outcome, budget, brand
+Owner of this document; final sign-off
+Operations manager
+Saturday dispatch, support, store onboarding
+Primary admin console user; UAT
+Partner stores
+Sales, easy packing, timely payouts
+Merchant portal users; pilot feedback
+Drivers
+Fair pay, clear routes
+Driver app users; pilot feedback
+Customers
+Authentic groceries, reliable delivery, easy payment
+Website and app users
+Development partner
+Clear, testable requirements
+Builds, deploys and maintains the platform
+Stripe
+Payment processing and payouts
+External provider
+Legal / tax advisors
+Contractor rules, sales tax, privacy
+Review before launch
+3.2 User roles
+Role
+Who
+Main goals
+Interface
+Customer (shopper)
+Diaspora families, busy professionals, curious home cooks
+Find authentic products, order from several stores, choose a window, pay quickly, track the order
+Website + installable app
+Merchant
+Owner or manager of a partner store
+Run a storefront, receive and pack orders, keep stock right, get paid
+Merchant portal
+Driver
+Vetted independent contractor
+Pick up batched jobs, deliver on time, see earnings
+Driver app (mobile)
+Admin
+BuckDuck operations staff
+Approve stores, dispatch, resolve issues, refund, configure fees and windows, see finances
+Admin console
+Visitor / search engine
+Anyone not signed in, Google, Bing
+Browse and discover stores and products
+Public website
+4. Business Process
+4.1 End-to-end flow
+Figure 1. Customer orders → store packs → driver picks up → delivered
+4.2 Weekly operating cycle
+When
+Customer
+Store
+Driver
+BuckDuck operations
+Sunday – Thursday
+Browses, orders, pays
+Accepts orders, reorders stock
+—
+Monitors capacity, onboards stores
+Friday (until cutoff)
+Last orders for Saturday
+Packs in BuckDuck bags, marks ready with bag count
+Goes online, claims jobs
+Assigns unclaimed ready orders
+Saturday 6 AM – 12 PM
+Morning delivery
+Hands bags to drivers
+Picks up, delivers, records proof
+Live dispatch, exceptions
+Saturday 12 PM – 4 PM
+Afternoon delivery
+Final handoffs
+Delivers afternoon route
+Closes routes, refunds
+Following week
+Reorders
+Receives payouts
+Receives weekly pay
+Finance reconciliation
+4.3 Order lifecycle
+Status
+Set by
+Meaning
+Next allowed
+Awaiting payment
+System
+Checkout started, payment not confirmed
+Placed · Cancelled
+Placed
+System (payment confirmed)
+Paid; waiting for the store
+Accepted · Cancelled
+Accepted
+Merchant
+Store has committed to the order
+Packing · Cancelled
+Packing
+Merchant
+Being packed into BuckDuck bags
+Ready
+Ready for pickup
+Merchant (with bag count)
+Sealed and waiting for a driver
+Out for delivery
+Out for delivery
+Driver (bag count confirmed)
+Collected from the store
+Delivered
+Delivered
+Driver (note + optional photo)
+Handed over or left as instructed; store payout triggered
+— (refund possible)
+Cancelled
+Customer / Merchant / Admin
+Stopped before delivery; customer refunded, stock restored
+—
+Refunded
+Admin
+Fully refunded after an issue
+—
+5. Business Requirements
+High-level needs the platform must satisfy. Section 6 breaks each one into testable functional requirements.
+ID
+Requirement
+Priority
+Status
+BR-01
+Customers can buy from several independent stores in one checkout and receive everything in one Saturday window.
+Must
+Built
+BR-02
+Delivery happens once a week, on a configurable day (Saturday), in windows the customer chooses.
+Must
+Built
+BR-03
+Each store runs its own branded storefront and manages its own products, prices and stock.
+Must
+Built
+BR-04
+Stores pack orders in BuckDuck-branded bags and record the bag count for pickup.
+Must
+Built
+BR-05
+All customer payments are taken by BuckDuck (card, Apple Pay, Google Pay); stores are paid their share automatically.
+Must
+Built (test mode)
+BR-06
+BuckDuck drivers collect and deliver orders and record proof of delivery.
+Must
+Built
+BR-07
+Operations staff can oversee and correct everything: stores, users, orders, drivers, windows, fees and finances.
+Must
+Built
+BR-08
+Public store and product pages are discoverable through search engines.
+Must
+Built
+BR-09
+The platform is made of independent services, each with its own database, so a fault in one does not stop the others.
+Must
+Built
+BR-10
+Customers and partners are kept informed of order progress by email and SMS.
+Should
+Phase 2
+BR-11
+Customers can join a paid membership and use promo and referral codes.
+Could
+Phase 2
+6. Functional Requirements
+6.1 Public website, discovery & SEO
+Pages a visitor or search engine sees without signing in. Served by the web service.
+ID
+Requirement
+Priority
+Status
+FR-WEB-01
+Home page shows the next delivery day, each window's remaining capacity and cutoff, store categories, featured stores and how BuckDuck works.
+Must
+Built
+FR-WEB-02
+Store directory at /stores and category pages at /categories/{name}.
+Must
+Built
+FR-WEB-03
+Store page at /stores/{slug}: logo, description, address, rating, products grouped by category with a category filter.
+Must
+Built
+FR-WEB-04
+Product page at /products/{id}-{name}: price, unit, stock status, store, related products, add to cart.
+Must
+Built
+FR-WEB-05
+Product search across all stores at /search.
+Must
+Built
+FR-WEB-06
+Information pages: How it works (fees, FAQs), Sell on StoreFront USA, Drive with BuckDuck.
+Must
+Built
+FR-WEB-07
+Pages are rendered on the server so content is readable without JavaScript.
+Must
+Built
+FR-WEB-08
+Every indexable page has a unique title, meta description, canonical URL, Open Graph and Twitter tags, a single H1 and breadcrumbs.
+Must
+Built
+FR-WEB-09
+Structured data (JSON-LD): Organization, WebSite with SearchAction, GroceryStore with address, Product with Offer, ItemList, BreadcrumbList, FAQPage.
+Must
+Built
+FR-WEB-10
+Live sitemap.xml listing every store, category and product with last-modified dates; robots.txt excluding /app, /api and search results.
+Must
+Built
+FR-WEB-11
+Old or partial product URLs redirect (301) to the canonical URL; missing pages return a real 404.
+Must
+Built
+FR-WEB-12
+Add to cart works directly on store, product and search pages; the cart count shows in the header.
+Must
+Built
+FR-WEB-13
+If store listings are briefly unavailable, visitors see a clear "we'll be right back" page instead of an error.
+Should
+Built
+Acceptance criteria
+Google Rich Results Test reports valid Product, GroceryStore, Breadcrumb and FAQ data for sample pages.
+Every store and active product appears in sitemap.xml within 5 minutes of going live.
+Pages pass Lighthouse SEO ≥ 95 and Accessibility ≥ 90 on mobile.
+6.2 Customer accounts
+ID
+Requirement
+Priority
+Status
+FR-ACC-01
+Sign up with name, email, phone and password (8+ characters); sign in; sign out.
+Must
+Built
+FR-ACC-02
+Edit name and phone; see upcoming and past orders.
+Must
+Built
+FR-ACC-03
+Password reset by email link.
+Must
+Phase 2
+FR-ACC-04
+Email address verification.
+Should
+Phase 2
+FR-ACC-05
+Saved delivery address is remembered for the next checkout on the same device.
+Should
+Built
+FR-ACC-06
+Repeated failed sign-ins are rate-limited.
+Must
+Built
+6.3 Cart & checkout
+ID
+Requirement
+Priority
+Status
+FR-CHK-01
+One cart can hold products from several stores; the cart groups items by store and shows the estimated bag count per store.
+Must
+Built
+FR-CHK-02
+Prices, fees and stock are always calculated on the server; prices sent by the browser are ignored.
+Must
+Built
+FR-CHK-03
+Order summary shows items, delivery fee per store, service fee, tax, tip and total before payment.
+Must
+Built
+FR-CHK-04
+Customer enters the delivery address, phone and optional delivery notes; ZIP code is validated and can be restricted to service areas.
+Must
+Built
+FR-CHK-05
+Customer chooses an open Saturday window. Full or closed windows are shown but cannot be selected.
+Must
+Built
+FR-CHK-06
+Customer chooses a driver tip (none, $3, $5, $8, $10); the tip is split across stores and paid to drivers in full.
+Must
+Built
+FR-CHK-07
+Orders below the minimum (default $15) cannot be checked out and show how much more is needed.
+Must
+Built
+FR-CHK-08
+One payment creates one order per store, each with its own number (BD-xxxxx).
+Must
+Built
+FR-CHK-09
+Confirmation page shows the order, window and receipt immediately after payment.
+Must
+Built
+FR-CHK-10
+Promo codes and gift cards.
+Could
+Phase 2
+Acceptance criteria
+A cart with items from 3 stores produces 3 orders, 3 delivery fees and one payment.
+Changing a price in the browser has no effect on the amount charged.
+A window past its cutoff cannot be chosen, and the server rejects it even if forced.
+6.4 Payments
+Handled by the payments service through Stripe.
+ID
+Requirement
+Priority
+Status
+FR-PAY-01
+Accept credit and debit cards through Stripe-hosted fields; BuckDuck never stores card numbers.
+Must
+Built (test mode)
+FR-PAY-02
+Offer Apple Pay (Safari / iOS) and Google Pay (Chrome / Android) as express checkout buttons.
+Must
+Built (test mode)
+FR-PAY-03
+Support bank authentication (3-D Secure) and return the customer to their order afterwards.
+Must
+Built (test mode)
+FR-PAY-04
+Confirm payment from Stripe (webhook) before an order is released to the store.
+Must
+Built (test mode)
+FR-PAY-05
+Full refunds on cancellation and full or partial refunds by admin, never exceeding the amount paid.
+Must
+Built (test mode)
+FR-PAY-06
+Stores connect a bank account through Stripe Connect Express from the merchant portal.
+Must
+Built (test mode)
+FR-PAY-07
+When an order is delivered, the store's share (merchandise minus commission) is transferred automatically. Transfers for stores not yet connected wait and are sent once they connect.
+Must
+Built (test mode)
+FR-PAY-08
+Record payment method (card, Apple Pay, Google Pay, Link) for reporting.
+Should
+Built
+FR-PAY-09
+Automated weekly driver payouts.
+Should
+Phase 2
+6.5 Delivery windows & scheduling
+Handled by the delivery service.
+ID
+Requirement
+Priority
+Status
+FR-WIN-01
+Windows are published automatically for the delivery weekday several weeks ahead (default 4).
+Must
+Built
+FR-WIN-02
+Default windows are 6 AM–12 PM and 12 PM–4 PM; the delivery day and windows are admin settings.
+Must
+Configurable
+FR-WIN-03
+Each window has a capacity (default 120 orders); paid orders count toward it; full windows close.
+Must
+Built
+FR-WIN-04
+Ordering for a window closes at the cutoff (default 24 hours before the window starts).
+Must
+Configurable
+FR-WIN-05
+Admin can add a special window, change capacity, or pause and resume a window.
+Must
+Built
+6.6 Order tracking (customer)
+ID
+Requirement
+Priority
+Status
+FR-TRK-01
+Order page shows status, progress bar, timeline with timestamps, window, items, receipt and payment method.
+Must
+Built
+FR-TRK-02
+Shows the assigned driver's name and vehicle once a driver accepts.
+Must
+Built
+FR-TRK-03
+Customer can cancel for a full refund until the store accepts the order.
+Must
+Built
+FR-TRK-04
+Email and SMS updates at placed, ready, out for delivery and delivered.
+Should
+Phase 2
+FR-TRK-05
+Customer can rate the order and report a problem with an item.
+Should
+Phase 2
+6.7 Merchant portal
+ID
+Requirement
+Priority
+Status
+FR-MER-01
+Apply to sell with store name, category and address; new stores are pending until approved by BuckDuck.
+Must
+Built
+FR-MER-02
+Dashboard: new, in-progress and ready counts; BuckDuck bags needed for the next Saturday; weekly sales chart; lifetime earnings; top products; low-stock alerts.
+Must
+Built
+FR-MER-03
+Order queue board with columns New → Accepted → Packing → Ready; one click moves an order forward.
+Must
+Built
+FR-MER-04
+Marking an order ready requires the number of sealed BuckDuck bags.
+Must
+Built
+FR-MER-05
+Decline or cancel an order before packing, with an automatic customer refund and stock restored.
+Must
+Built
+FR-MER-06
+Pick list that totals every item across accepted and packing orders; printable packing slip per order.
+Must
+Built
+FR-MER-07
+Product management: add, edit, hide; name, price, unit, category, stock, description, photo upload (max 4 MB).
+Must
+Built
+FR-MER-08
+Storefront editor: name, tagline, description, category, address, phone, brand color, icon and logo upload, with a live preview.
+Must
+Built
+FR-MER-09
+Payouts page: pending earnings, weekly gross, commission and net, transfer status, Stripe connection.
+Must
+Built
+FR-MER-10
+Order history across all weeks.
+Must
+Built
+FR-MER-11
+Bulk product import from a spreadsheet (CSV).
+Should
+Phase 2
+FR-MER-12
+Staff accounts for store employees with limited permissions.
+Could
+Phase 2
+Acceptance criteria
+A merchant can move a paid order from New to Ready in under 30 seconds.
+A product added in the portal appears on the public store page within 1 minute.
+6.8 Driver app
+ID
+Requirement
+Priority
+Status
+FR-DRV-01
+Apply to drive with vehicle details; sign in on a phone; installable as an app.
+Must
+Built
+FR-DRV-02
+Online/offline switch; only online drivers can accept jobs.
+Must
+Built
+FR-DRV-03
+Job board of ready orders showing window, pay (base + tip), store, delivery ZIP, bag and item counts. The customer's street address and phone stay hidden until the driver accepts.
+Must
+Built
+FR-DRV-04
+Accept a job (first come, first served; no double assignment); release a job before pickup.
+Must
+Built
+FR-DRV-05
+Route list (max 12 active stops) with store and customer addresses, notes, navigation links and tap-to-call.
+Must
+Built
+FR-DRV-06
+Confirm pickup with the bag count; complete delivery with a required drop-off note and optional photo.
+Must
+Built
+FR-DRV-07
+Earnings: lifetime total, tips, earnings by delivery day, recent deliveries.
+Must
+Built
+FR-DRV-08
+Optimized multi-stop route with turn-by-turn navigation.
+Should
+Phase 2
+FR-DRV-09
+Background-check and document upload during onboarding.
+Should
+Phase 2
+6.9 Admin console
+ID
+Requirement
+Priority
+Status
+FR-ADM-01
+Overview: GMV, net revenue, orders, average order value, GMV by delivery day, this Saturday's pipeline, window capacity, top stores, payment mix, and alerts for pending stores, unassigned orders and services not responding.
+Must
+Built
+FR-ADM-02
+Orders: search and filter by status; open any order; assign or change the driver; override status; full or partial refund with reason.
+Must
+Built
+FR-ADM-03
+Dispatch board: ready orders without a driver, driver list with online status and active stops, orders out for delivery.
+Must
+Built
+FR-ADM-04
+Stores: approve, suspend or reinstate; set commission per store; see products, delivered orders and sales.
+Must
+Built
+FR-ADM-05
+Users: search and filter by role; suspend and reactivate (suspending a driver releases their open jobs).
+Must
+Built
+FR-ADM-06
+Drivers: online status, deliveries, active stops and earnings.
+Must
+Built
+FR-ADM-07
+Delivery windows: view capacity and bookings; add, pause, resume, change capacity.
+Must
+Built
+FR-ADM-08
+Finance: settlement by delivery day (GMV, commission, service and delivery fees, driver pay, store payouts, net revenue) and refunds.
+Must
+Built
+FR-ADM-09
+Settings: delivery fee, service fee rate and minimum, tax rate, minimum order, default commission, driver base pay, items per bag, delivery day, windows, cutoff, weeks published, capacity, service ZIP codes.
+Must
+Configurable
+FR-ADM-10
+Export of orders and finance data to CSV.
+Should
+Phase 2
+FR-ADM-11
+Audit log of admin actions.
+Should
+Phase 2
+7. Business Rules
+Defaults below are admin settings unless noted. Changes apply to new orders only.
+ID
+Rule
+Default
+BRL-01
+Delivery fee is charged once per store in the cart.
+$5.99
+BRL-02
+Service fee per store = percentage of items, with a minimum.
+5%, min $1.99
+BRL-03
+Minimum cart subtotal for checkout.
+$15.00
+BRL-04
+Tax rate on merchandise (groceries are often exempt; confirm per state).
+0%
+BRL-05
+Merchant commission on merchandise, set per store; new stores get the default.
+15%
+BRL-06
+Driver pay per order = base pay + 100% of the tip for that order.
+$5.50 base
+BRL-07
+Estimated bags per order = items ÷ items per bag, rounded up; the store confirms the real count when marking ready.
+10 items per bag
+BRL-08
+Delivery day and windows.
+Saturday, 6 AM–12 PM and 12 PM–4 PM
+BRL-09
+Ordering closes this many hours before a window starts.
+24 hours
+BRL-10
+Maximum paid orders per window.
+120
+BRL-11
+Customers may cancel only while the order is "Placed"; refund is full.
+Fixed rule
+BRL-12
+Stores may cancel only before packing; the customer is refunded in full and stock is restored.
+Fixed rule
+BRL-13
+Stock is reduced when payment is confirmed and restored when an order is cancelled; a product cannot be ordered beyond its stock.
+Fixed rule
+BRL-14
+A driver can hold at most 12 active stops and must be online to accept jobs.
+Fixed rule
+BRL-15
+Customer street address and phone are shown to a driver only after they accept the job.
+Fixed rule
+BRL-16
+Refunds can never exceed the amount paid; a full refund closes the order as "Refunded".
+Fixed rule
+BRL-17
+A store's payout is created only when the order is delivered.
+Fixed rule
+BRL-18
+New stores are hidden from the public site until approved.
+Fixed rule
+BRL-19
+Deliveries can be restricted to a list of ZIP codes; blank means all ZIP codes.
+All ZIP codes
+8. Non-Functional Requirements
+ID
+Requirement
+Priority
+Status
+NFR-01
+Architecture: six independently deployable services (web, identity, catalog, orders, payments, delivery); each back-end service owns its own database and login.
+Must
+Built
+NFR-02
+Independence: if one service stops, the others keep running. Browsing works without ordering and payments; a dependent action shows a clear "temporarily unavailable" message; dashboards show partial data and name the missing service.
+Must
+Built
+NFR-03
+Reliable events: changes that affect another service are saved with the change and retried until delivered; nothing is lost if a service is offline. Duplicate deliveries are harmless.
+Must
+Built
+NFR-04
+Performance: public pages respond in under 500 ms (p95) at launch volume; API calls under 800 ms (p95); pages are cached for 60 seconds.
+Must
+Built
+NFR-05
+Capacity: handle 6,000 orders per week and 2,000 concurrent Saturday users by Year 3 by adding service instances.
+Should
+Built
+NFR-06
+Availability: 99.5% monthly; 99.9% from Friday 6 PM to Saturday 6 PM. Health checks on every service.
+Must
+Built
+NFR-07
+Security: HTTPS only; hashed passwords (PBKDF2-SHA256, 240,000 rounds); signed session tokens (7-day expiry); role checks on every endpoint; internal endpoints need a separate service token and are never exposed; strict Content Security Policy and security headers; sign-in rate limiting.
+Must
+Built
+NFR-08
+Payments compliance: PCI DSS scope reduced to SAQ A — card data is entered only in Stripe-hosted fields.
+Must
+Built
+NFR-09
+Privacy: collect only what delivery needs; customer address hidden from drivers until accepted; privacy policy and data-deletion process (CCPA-ready).
+Must
+Phase 2
+NFR-10
+Accessibility: WCAG 2.1 AA — keyboard navigation, visible focus, skip link, alt text, labelled controls, sufficient contrast, reduced-motion support.
+Must
+Built
+NFR-11
+SEO: see 6.1. Lighthouse SEO ≥ 95.
+Must
+Built
+NFR-12
+Devices: latest two versions of Chrome, Safari, Edge and Firefox; iOS 16+ and Android 10+; layouts from 360 px wide; installable PWA.
+Must
+Built
+NFR-13
+Observability: structured logs per service; health endpoint with database status and pending-event count; error alerts.
+Should
+Built
+NFR-14
+Backup & recovery: daily backups of every database and media; restore tested quarterly; recovery point ≤ 24 h, recovery time ≤ 4 h.
+Must
+Phase 2
+NFR-15
+Maintainability: each service has OpenAPI docs at /docs; automated test suite runs against SQLite and PostgreSQL.
+Must
+Built
+NFR-16
+Portability: runs locally without Docker, with Docker Compose, on Render, or any container host.
+Must
+Built
+9. Platform Architecture
+Figure 2. Six services, one database per service, events through a retrying outbox
+Service
+Responsibility
+Owns (database)
+web
+Server-rendered SEO website, the signed-in app at /app/, API gateway; the only service exposed to the internet
+None
+identity
+Sign-up, sign-in, roles, profiles, user administration; issues the session token
+users
+catalog
+Stores, storefronts, products, photos, stock, store approval and commission
+stores, products, stock movements
+orders
+Pricing, checkout, order lifecycle, merchant queue, admin operations, finance
+checkouts, orders, items, events, fee settings
+payments
+Stripe payments, refunds, store bank accounts, payouts, webhooks
+payments, refunds, merchant accounts, transfers
+delivery
+Delivery windows and capacity, drivers, job board, routes, proof of delivery
+windows, drivers, delivery jobs, schedule settings
+Technology: Python 3.13, FastAPI, SQLAlchemy, PostgreSQL 16 in production (SQLite for local development), Jinja2 server-side templates, vanilla JavaScript for the signed-in app, Stripe, Docker. Full details are in docs/ARCHITECTURE.md.
+10. Data Requirements
+Entity
+Key attributes
+Owner
+Retention
+User
+Name, email, phone, role, status, password hash
+identity
+Life of account; deleted on request (except legal records)
+Store
+Name, slug, category, address, phone, brand, logo, status, commission
+catalog
+Life of partnership + 7 years
+Product
+Name, category, price, unit, stock, photo, active
+catalog
+Life of store
+Checkout / Order
+Customer, store and window snapshots, address, items, fees, tip, totals, status, events
+orders
+7 years (tax and accounting)
+Payment / Refund / Transfer
+Amounts, method, Stripe references, status
+payments
+7 years
+Delivery window
+Date, start, end, capacity, active
+delivery
+2 years
+Driver / Delivery job
+Vehicle, online status; job addresses, bags, pay, proof note and photo
+delivery
+3 years (photos 90 days)
+Money is stored as whole cents; times are stored in UTC and shown in the market's local time.
+Each order keeps a copy of the store, customer, window and driver details as they were at the time, so history never changes and never depends on another service.
+Card numbers are never stored by BuckDuck.
+11. Integrations
+System
+Purpose
+Direction
+Status
+Stripe Payments (PaymentIntents)
+Card, Apple Pay, Google Pay, Link; 3-D Secure
+Outbound + webhooks
+Built (test mode)
+Stripe Connect Express
+Store onboarding, bank details, payouts
+Outbound + webhooks
+Built (test mode)
+Apple Pay domain verification
+Required file served at /.well-known/
+Inbound
+Built
+Google Maps (links)
+Navigation to store and customer from the driver app
+Outbound link
+Built
+Search engines
+sitemap.xml, robots.txt, structured data
+Inbound crawl
+Built
+Email provider (e.g. Postmark, SendGrid)
+Receipts, password reset, order updates
+Outbound
+Phase 2
+SMS provider (e.g. Twilio)
+Delivery-day updates to customers and drivers
+Outbound
+Phase 2
+Background-check provider (e.g. Checkr)
+Driver screening
+Outbound + webhooks
+Phase 2
+Route optimization (e.g. Google Routes API)
+Optimized multi-stop routes
+Outbound
+Phase 2
+12. Reporting & Analytics
+Report
+Audience
+Contents
+Status
+Marketplace overview
+Admin
+GMV, net revenue, orders, AOV, GMV by delivery day, pipeline, capacity, top stores, payment mix
+Built
+Finance settlement
+Admin
+Per delivery day: GMV, commission, fees, driver pay, store payouts, net revenue; refunds
+Built
+Merchant dashboard
+Merchant
+Order counts by stage, bags needed, weekly sales, lifetime earnings, top products, low stock
+Built
+Merchant payouts
+Merchant
+Weekly gross, commission, net, transfer status, pending earnings
+Built
+Driver earnings
+Driver
+Lifetime and weekly earnings, tips, recent deliveries
+Built
+Growth funnel (visits → carts → orders → repeat)
+Founder
+Web analytics and cohort retention
+Phase 2
+13. Assumptions, Constraints & Dependencies
+Assumptions
+Launch is in one metro (demo configured for Houston, TX) with 20–35 stores before public launch.
+Partner stores have a smartphone or computer to use the merchant portal and can pack to the BuckDuck standard.
+Drivers are independent contractors with their own vehicles; BuckDuck supplies insulated bag kits.
+Customers accept a once-a-week delivery in exchange for authentic products and lower fees.
+Constraints
+Apple Pay works only over HTTPS on a verified domain, in Safari and iOS.
+Stripe Connect requires stores to complete identity verification before payouts.
+Driver classification and sales-tax rules vary by state and must be reviewed by advisors before each new market.
+Seed budget of $450,000 (see Business Plan).
+Dependencies
+Stripe account approval and live keys.
+A domain name and HTTPS hosting.
+PostgreSQL hosting with daily backups.
+Email and SMS providers for Phase 2 notifications.
+14. Risks
+Risk
+Impact
+Mitigation
+Stores mark orders ready late on Saturday morning
+High
+Friday packing standard, dashboard bag counts, dispatch alerts, store scorecards
+A service outage on delivery day
+High
+Independent services, retrying events, health checks, stale-cache pages, on-call runbook
+Payment fraud or chargebacks
+Medium
+Stripe Radar, 3-D Secure, wallets with built-in authentication
+Cold-chain failure for meat and fish
+High
+Insulated liners, packing rules, window length limits, temperature spot checks
+Low search visibility at launch
+Medium
+Server-rendered pages, structured data, sitemap, store pages per neighborhood, Search Console monitoring
+Missing notifications reduce trust (Phase 2 item)
+Medium
+Prioritize email/SMS immediately after launch; order page shows live status meanwhile
+Driver contractor classification
+Medium
+Attorney-reviewed agreement; occupational accident coverage
+15. Scope Boundaries & Future Phases
+Phase
+Items
+Phase 1 — Launch (current codebase)
+Everything marked Built, Built (test mode) or Configurable in this document
+Phase 2 — First 3 months after launch
+Password reset and email verification · email/SMS notifications · automated driver payouts · CSV export · admin audit log · backups and restore drill · privacy/data-deletion flow · ratings and issue reporting
+Phase 3 — Growth
+BuckDuck+ membership · promo and referral codes · recurring weekly baskets · recipe bundles · route optimization · driver background-check integration · bulk product import · store staff accounts · native App Store and Google Play releases · second metro
+16. Acceptance Criteria & Sign-off
+16.1 User acceptance test scenarios
+#
+Scenario
+Expected result
+UAT-01
+Visitor finds a store through search, adds items from two stores, signs up and pays with Apple Pay
+Two orders created, one payment, confirmation shown, stock reduced
+UAT-02
+Customer tries to choose a window past its cutoff
+Window cannot be selected; server rejects a forced attempt
+UAT-03
+Merchant accepts, packs and marks an order ready with 2 bags
+Order appears on the driver job board with 2 bags
+UAT-04
+Driver goes online, accepts, confirms pickup and delivers with a note
+Customer sees "Delivered" with driver name; store payout created
+UAT-05
+Customer cancels a placed order
+Full refund; stock restored; job removed from the board
+UAT-06
+Admin issues a $5 partial refund on a delivered order
+Refund recorded; order stays delivered; event in timeline
+UAT-07
+Admin changes the delivery fee to $6.49
+New quotes use $6.49; existing orders unchanged
+UAT-08
+Ordering service is stopped while a visitor browses
+Store and product pages still load; checkout shows "temporarily unavailable"
+UAT-09
+Delivery service is stopped while a merchant updates an order
+Update succeeds; the driver board catches up automatically when delivery returns
+UAT-10
+Google Rich Results Test on a product page
+Valid Product with Offer and BreadcrumbList
+UAT-11
+New merchant registers
+Store pending; hidden publicly until admin approves; then live and in sitemap
+UAT-01, 03, 04, 05, 06, 08 and 09 are exercised by the automated test suite (tests/test_platform.py) and a browser test of every screen. UAT-02, 07, 10 and 11 should be checked by hand during UAT, and every payment scenario must be repeated with live Stripe keys before launch.
+16.2 Sign-off
+Name
+Role
+Signature
+Date
+Paa
+Founder / CEO
+Operations manager
+Development lead
+17. Appendix — Traceability Matrix
+Business requirement
+Functional requirements
+Service(s)
+Verified by
+BR-01 Multi-store, one window
+FR-CHK-01, 03, 08 · FR-WIN-03
+orders, catalog, delivery
+Lifecycle test · UAT-01
+BR-02 Weekly Saturday windows
+FR-WIN-01 – 05 · FR-CHK-05
+delivery
+Checkout validation test · UAT-02 (manual)
+BR-03 Store storefronts
+FR-MER-07, 08 · FR-WEB-03, 04
+catalog, web
+Dashboard test · browser test
+BR-04 BuckDuck bags
+FR-MER-04, 06 · FR-DRV-06 · BRL-07
+orders, delivery
+Lifecycle test · UAT-03
+BR-05 Payments & payouts
+FR-PAY-01 – 08
+payments, orders
+Lifecycle + cancel tests · UAT-05, 06
+BR-06 Driver delivery
+FR-DRV-01 – 07
+delivery, orders
+Lifecycle test · UAT-04
+BR-07 Operations control
+FR-ADM-01 – 09
+all
+Dashboard test · UAT-07 (manual)
+BR-08 Search visibility
+FR-WEB-01 – 13 · NFR-11
+web, catalog
+SEO test · UAT-10 (manual)
+BR-09 Independent services
+NFR-01 – 03, 06
+all
+Independence tests (services stopped mid-test) · UAT-08, 09
+BR-10 Notifications
+FR-TRK-04 · FR-ACC-03
+(new notifications service)
+Phase 2
+BR-11 Membership & promos
+FR-CHK-10
+orders, payments
+Phase 2

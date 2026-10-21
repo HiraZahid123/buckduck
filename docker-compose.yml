@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: buckduck-backend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DATABASE_URL=postgresql://neondb_owner:npg_uwgqFW46ryYb@ep-damp-term-b4kxob0n-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require
+      - JWT_SECRET=buckduck_super_secure_jwt_secret_key_2026
+      - FRONTEND_URL=http://localhost:3000
+    ports:
+      - '4000:4000'
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: buckduck-frontend
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - BACKEND_URL=http://backend:4000
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend

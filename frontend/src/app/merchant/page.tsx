@@ -1,0 +1,942 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useAuth } from '../../context/AuthContext';
+import BarChart from '../../components/BarChart';
+
+export default function MerchantPortalPage() {
+  const { user, demoLogin, logout } = useAuth();
+  const [subView, setSubView] = useState<'dash' | 'orders' | 'products' | 'store' | 'payouts'>('dash');
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Ready Dialog
+  const [readyOrder, setReadyOrder] = useState<any>(null);
+  const [bagInput, setBagInput] = useState<number>(1);
+
+  // Order Details Modal
+  const [detailOrder, setDetailOrder] = useState<any>(null);
+
+  // Edit / Add Product Modal
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [prodForm, setProdForm] = useState({
+    name: '',
+    category: 'Pantry',
+    price_cents: 799,
+    unit: '1 lb',
+    stock: 25,
+    emoji: '🛒',
+    description: '',
+  });
+
+  // Store profile form
+  const [storeForm, setStoreForm] = useState({
+    name: 'Accra Market',
+    category: 'African Groceries',
+    tagline: 'Ghanaian staples, fresh every week',
+    description: 'Family-owned since 2009. Gari, kenkey, palm oil, smoked fish and the flavors of home.',
+    address: '9211 Harwin Dr',
+    city: 'Silver Spring',
+    state: 'MD',
+    zip: '20910',
+    phone: '(301) 555-0100',
+    color: '#B7791F',
+    emoji: '🌍',
+  });
+
+  // Audio Chime
+  const playChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.6);
+    } catch {
+      // interaction blocked
+    }
+  };
+
+  useEffect(() => {
+    if (!user || user.role !== 'merchant') {
+      demoLogin('merchant');
+    }
+  }, []);
+
+  const loadData = async () => {
+    const token = localStorage.getItem('bd_token');
+    if (!token) return;
+
+    try {
+      const [dashRes, ordRes, prodRes, payRes] = await Promise.all([
+        fetch('/api/merchant/dashboard', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/merchant/orders', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/merchant/products', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/merchant/payouts', { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      if (dashRes.ok) setDashboard(await dashRes.json());
+      if (ordRes.ok) setOrders(await ordRes.json());
+      if (prodRes.ok) setProducts(await prodRes.json());
+      if (payRes.ok) setPayouts(await payRes.json());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 15000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const updateOrderStatus = async (orderId: number, status: string, bagCount?: number) => {
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch(`/api/merchant/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status, bagCount }),
+      });
+      if (res.ok) {
+        setReadyOrder(null);
+        await loadData();
+      }
+    } catch {
+      alert('Failed to update status');
+    }
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('bd_token');
+    const isEdit = editingProduct?.id;
+    const url = isEdit ? `/api/merchant/products/${editingProduct.id}` : '/api/merchant/products';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(prodForm),
+      });
+      if (res.ok) {
+        setEditingProduct(null);
+        await loadData();
+      }
+    } catch {
+      alert('Failed to save product');
+    }
+  };
+
+  const newCount = orders.filter((o) => o.status === 'placed').length;
+  const inProgressCount = orders.filter((o) => ['accepted', 'packing'].includes(o.status)).length;
+  const readyCount = orders.filter((o) => o.status === 'ready').length;
+
+  // Mock weekly sales chart data
+  const chartData = [
+    { week: 'Sep 12', sales: 640 },
+    { week: 'Sep 19', sales: 890 },
+    { week: 'Sep 26', sales: 1120 },
+    { week: 'Oct 3', sales: 1450 },
+    { week: 'Oct 10', sales: 1820 },
+    { week: 'Oct 17', sales: 2150 },
+    { week: 'Oct 24', sales: 2680 },
+  ];
+
+  return (
+    <div className="portal">
+      {/* Dark Left Sidebar */}
+      <aside className="sidebar no-print" id="sidebar">
+        <div className="logo" style={{ padding: '4px 8px 20px' }}>
+          <svg viewBox="0 0 48 48" style={{ width: 34, height: 34, flex: 'none' }}>
+            <defs>
+              <linearGradient id="g-m-side" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#F7E08B" />
+                <stop offset="0.45" stopColor="#D4A017" />
+                <stop offset="1" stopColor="#9E7410" />
+              </linearGradient>
+            </defs>
+            <rect width="48" height="48" rx="11" fill="#0B1F4B" />
+            <path d="M18 20v-3a6 6 0 0 1 12 0v3" fill="none" stroke="url(#g-m-side)" strokeWidth="2.6" strokeLinecap="round" />
+            <path d="M12.5 20h23l-2.1 17.4A3 3 0 0 1 30.4 40H17.6a3 3 0 0 1-3-2.6z" fill="url(#g-m-side)" />
+            <circle cx="22.4" cy="29.4" r="4.4" fill="#0B1F4B" />
+            <path d="M26.2 28.4l5.6 1.4-5.6 1.8z" fill="#0B1F4B" />
+          </svg>
+          <div>
+            <div className="wm" style={{ fontSize: 18, color: '#fff' }}>Buck<b>Duck</b></div>
+            <span className="sub" style={{ fontSize: 9 }}>MERCHANT PORTAL</span>
+          </div>
+        </div>
+
+        {/* Store badge card */}
+        <div className="card" style={{ background: 'rgba(255,255,255,.06)', borderColor: 'rgba(255,255,255,.1)', padding: 12, boxShadow: 'none', color: '#fff', marginBottom: 12 }}>
+          <div className="row" style={{ gap: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, overflow: 'hidden', flex: 'none' }}>
+              {user?.store?.emoji || '🌍'}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="strong small" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user?.store?.name || 'Accra Market'}
+              </div>
+              <div className="tiny" style={{ opacity: 0.7 }}>
+                {user?.store?.status === 'active' ? '● Live' : user?.store?.status === 'pending' ? '◌ Pending approval' : '✕ Suspended'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="side-sec">Menu</div>
+        <button
+          className={`side-link ${subView === 'dash' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('dash')}
+        >
+          <span>📊</span>
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          className={`side-link ${subView === 'orders' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('orders')}
+        >
+          <span>📋</span>
+          <span>Orders</span>
+          {(newCount + inProgressCount) > 0 && (
+            <span className="cnt">{newCount + inProgressCount}</span>
+          )}
+        </button>
+
+        <button
+          className={`side-link ${subView === 'products' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('products')}
+        >
+          <span>📦</span>
+          <span>Products</span>
+          <span className="cnt" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
+            {products.length}
+          </span>
+        </button>
+
+        <button
+          className={`side-link ${subView === 'store' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('store')}
+        >
+          <span>🏪</span>
+          <span>Storefront</span>
+        </button>
+
+        <button
+          className={`side-link ${subView === 'payouts' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('payouts')}
+        >
+          <span>💵</span>
+          <span>Payouts</span>
+        </button>
+
+        <div className="side-sec">Public</div>
+        <Link
+          className="side-link"
+          href={`/stores/${user?.store?.slug || 'accra-market'}`}
+        >
+          <span>🏠</span>
+          <span>View my storefront</span>
+        </Link>
+
+        <div className="side-foot">
+          <div className="row" style={{ gap: 10, marginBottom: 12 }}>
+            <div className="avatar-sm">{user?.name ? user.name.charAt(0) : 'E'}</div>
+            <div className="grow" style={{ minWidth: 0 }}>
+              <div className="strong small" style={{ color: '#fff', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                {user?.name || 'Efua Boateng'}
+              </div>
+              <div className="tiny" style={{ opacity: 0.6 }}>{user?.email || 'merchant@buckduck.com'}</div>
+            </div>
+          </div>
+          <button
+            className="btn btn-sm btn-block"
+            style={{ background: 'rgba(255,255,255,.08)', color: '#fff' }}
+            onClick={logout}
+          >
+            Sign out
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="main">
+        {/* Top Bar */}
+        <div className="main-top no-print">
+          <div className="row">
+            <div className="strong" style={{ fontSize: 16 }}>
+              {subView === 'dash' && 'Dashboard'}
+              {subView === 'orders' && 'Orders'}
+              {subView === 'products' && 'Products'}
+              {subView === 'store' && 'Storefront'}
+              {subView === 'payouts' && 'Payouts'}
+            </div>
+          </div>
+
+          <div className="row" style={{ gap: 10 }}>
+            <button className="btn btn-sm btn-ghost" onClick={playChime}>
+              🔔 Chime
+            </button>
+            <span className="badge b-gold hide-sm">
+              🚚 Next: Saturday, Feb 21
+            </span>
+            <Link href="/" className="btn btn-ghost btn-sm">
+              Marketplace
+            </Link>
+          </div>
+        </div>
+
+        {/* Body View */}
+        <div className="main-body">
+          {/* SCREEN 1: KITCHEN ORDER QUEUE (KANBAN) */}
+          {subView === 'orders' && (
+            <div>
+              <div className="page-h">
+                <div>
+                  <h1>Order queue</h1>
+                  <p>Move each order across: accept → pack into BuckDuck bags → mark ready for driver pickup.</p>
+                </div>
+                <div className="row">
+                  <span className="badge b-gold" style={{ fontSize: 14 }}>
+                    🛍️ Est. {dashboard?.counts?.totalBags || 4} BuckDuck Bags Needed
+                  </span>
+                </div>
+              </div>
+
+              <div className="kanban">
+                {/* 1. NEW / PLACED */}
+                <div className="kanban-col">
+                  <div className="kanban-header">
+                    <span>1. NEW ({newCount})</span>
+                  </div>
+                  {orders.filter((o) => o.status === 'placed').map((o) => (
+                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
+                      <div className="row between">
+                        <b>{o.number}</b>
+                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                      </div>
+                      <div className="small" style={{ margin: '4px 0' }}>
+                        {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
+                      </div>
+                      <div className="row between" style={{ marginBottom: 8 }}>
+                        <span className="badge b-gold">🛍️ {o.bags} bag(s)</span>
+                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                      </div>
+                      <div className="row">
+                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                        <button className="btn btn-primary btn-sm grow" onClick={() => updateOrderStatus(o.id, 'accepted')}>Accept</button>
+                      </div>
+                    </div>
+                  ))}
+                  {newCount === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No new orders</div>}
+                </div>
+
+                {/* 2. ACCEPTED */}
+                <div className="kanban-col">
+                  <div className="kanban-header">
+                    <span>2. ACCEPTED ({orders.filter((o) => o.status === 'accepted').length})</span>
+                  </div>
+                  {orders.filter((o) => o.status === 'accepted').map((o) => (
+                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
+                      <div className="row between">
+                        <b>{o.number}</b>
+                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                      </div>
+                      <div className="small" style={{ margin: '4px 0' }}>
+                        {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
+                      </div>
+                      <div className="row between" style={{ marginBottom: 8 }}>
+                        <span className="badge b-gold">🛍️ {o.bags} bag(s)</span>
+                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                      </div>
+                      <div className="row">
+                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                        <button className="btn btn-blue btn-sm grow" onClick={() => updateOrderStatus(o.id, 'packing')}>Start packing</button>
+                      </div>
+                    </div>
+                  ))}
+                  {orders.filter((o) => o.status === 'accepted').length === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No accepted orders</div>}
+                </div>
+
+                {/* 3. PACKING */}
+                <div className="kanban-col">
+                  <div className="kanban-header">
+                    <span>3. PACKING ({orders.filter((o) => o.status === 'packing').length})</span>
+                  </div>
+                  {orders.filter((o) => o.status === 'packing').map((o) => (
+                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
+                      <div className="row between">
+                        <b>{o.number}</b>
+                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                      </div>
+                      <div className="small" style={{ margin: '4px 0' }}>
+                        {o.users_orders_customer_idTousers?.name} · Pack into sealed bags
+                      </div>
+                      <div className="row between" style={{ marginBottom: 8 }}>
+                        <span className="badge b-gold">🛍️ Est. {o.bags} bag(s)</span>
+                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                      </div>
+                      <div className="row">
+                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                        <button
+                          className="btn btn-success btn-sm grow"
+                          onClick={() => {
+                            setReadyOrder(o);
+                            setBagInput(o.bags || 1);
+                          }}
+                        >
+                          Mark ready
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {orders.filter((o) => o.status === 'packing').length === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No packing orders</div>}
+                </div>
+
+                {/* 4. READY FOR PICKUP */}
+                <div className="kanban-col">
+                  <div className="kanban-header">
+                    <span>4. READY FOR PICKUP ({readyCount})</span>
+                  </div>
+                  {orders.filter((o) => o.status === 'ready').map((o) => (
+                    <div key={o.id} className="order-card" style={{ marginBottom: 12, background: 'var(--green-bg)' }}>
+                      <div className="row between">
+                        <b>{o.number}</b>
+                        <span className="badge b-green">Ready</span>
+                      </div>
+                      <div className="small" style={{ margin: '4px 0' }}>
+                        {o.users_orders_customer_idTousers?.name}
+                      </div>
+                      <div className="row between">
+                        <span className="badge b-gold">🛍️ {o.bags} Bag(s) Sealed</span>
+                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                      </div>
+                      <div className="tiny muted" style={{ marginTop: 8 }}>
+                        Awaiting Saturday driver pickup
+                      </div>
+                    </div>
+                  ))}
+                  {readyCount === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No ready orders</div>}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 2: DASHBOARD */}
+          {subView === 'dash' && (
+            <div className="stack" style={{ gap: 24 }}>
+              <div className="page-h">
+                <div>
+                  <h1>Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, {user?.name?.split(' ')[0] || 'Partner'}</h1>
+                  <p>Next delivery day: <b>Saturday Morning (6 AM–12 PM)</b> — have all orders packed and marked ready before window start.</p>
+                </div>
+                <button className="btn btn-primary" onClick={() => setSubView('orders')}>
+                  Open order queue →
+                </button>
+              </div>
+
+              {/* 4 KPI tiles */}
+              <div className="grid g4">
+                <div className="kpi">
+                  <div className="lbl">New orders</div>
+                  <div className="val">{newCount}</div>
+                  <div className="sub">Need to be accepted</div>
+                </div>
+                <div className="kpi">
+                  <div className="lbl">In progress</div>
+                  <div className="val">{inProgressCount}</div>
+                  <div className="sub">Accepted & packing</div>
+                </div>
+                <div className="kpi">
+                  <div className="lbl">Ready for pickup</div>
+                  <div className="val">{readyCount}</div>
+                  <div className="sub">Awaiting driver</div>
+                </div>
+                <div className="kpi">
+                  <div className="lbl">BuckDuck bags needed</div>
+                  <div className="val">{dashboard?.counts?.totalBags || 4}</div>
+                  <div className="sub">For this Saturday</div>
+                </div>
+              </div>
+
+              {/* Weekly sales chart + Lifetime card */}
+              <div className="grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
+                <div className="card">
+                  <div className="card-h">
+                    <h3>Weekly sales</h3>
+                    <span className="small muted">Merchandise sales by delivery day</span>
+                  </div>
+                  <BarChart
+                    data={chartData}
+                    valueKey="sales"
+                    labelKey="week"
+                    tipLabel="Merchandise Sales"
+                    color="var(--blue-600)"
+                  />
+                </div>
+
+                <div className="card">
+                  <h3>Lifetime</h3>
+                  <div className="summary-line" style={{ marginTop: 12 }}>
+                    <span>Delivered orders</span>
+                    <b>{dashboard?.counts?.delivered || 12}</b>
+                  </div>
+                  <div className="summary-line">
+                    <span>Gross sales</span>
+                    <b>${((dashboard?.lifetimeSalesCents || 148000) / 100).toFixed(2)}</b>
+                  </div>
+                  <div className="summary-line">
+                    <span>Commission (15%)</span>
+                    <b>−${(((dashboard?.lifetimeSalesCents || 148000) * 0.15) / 100).toFixed(2)}</b>
+                  </div>
+                  <div className="summary-line total">
+                    <span>Your earnings</span>
+                    <span>${(((dashboard?.lifetimeSalesCents || 148000) * 0.85) / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Products & Low Stock */}
+              <div className="grid g2">
+                <div className="card">
+                  <h3>Top products</h3>
+                  <table className="table" style={{ marginTop: 10 }}>
+                    <tbody>
+                      {products.slice(0, 5).map((p) => (
+                        <tr key={p.id}>
+                          <td><span style={{ marginRight: 8, fontSize: 20 }}>{p.emoji || '🛒'}</span><b>{p.name}</b></td>
+                          <td className="muted small">50 sold</td>
+                          <td className="num strong">${(p.price_cents / 100).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="card">
+                  <div className="card-h">
+                    <h3>Low stock</h3>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setSubView('products')}>Manage →</button>
+                  </div>
+                  <div className="stack" style={{ gap: 8, marginTop: 10 }}>
+                    {products.slice(0, 3).map((p) => (
+                      <div key={p.id} className="row between" style={{ padding: '8px 0', borderTop: '1px solid var(--line)' }}>
+                        <div className="row" style={{ gap: 8 }}>
+                          <span>{p.emoji || '🛒'}</span>
+                          <span>{p.name}</span>
+                        </div>
+                        <span className="badge b-amber">{p.stock || 8} left</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 3: PRODUCTS */}
+          {subView === 'products' && (
+            <div>
+              <div className="page-h">
+                <div>
+                  <h1>Products</h1>
+                  <p>{products.length} listings on your storefront</p>
+                </div>
+                <button
+                  className="btn btn-gold"
+                  onClick={() => {
+                    setEditingProduct({});
+                    setProdForm({ name: '', category: 'Pantry', price_cents: 799, unit: '1 lb', stock: 25, emoji: '📦', description: '' });
+                  }}
+                >
+                  + Add product
+                </button>
+              </div>
+
+              <div className="card pad0">
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th className="num">Price</th>
+                        <th>Unit</th>
+                        <th className="num">Stock</th>
+                        <th>Status</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((p) => (
+                        <tr key={p.id}>
+                          <td>
+                            <div className="row">
+                              <span style={{ fontSize: 24, width: 36 }}>{p.emoji || '🛒'}</span>
+                              <b>{p.name}</b>
+                            </div>
+                          </td>
+                          <td>{p.category}</td>
+                          <td className="num">${(p.price_cents / 100).toFixed(2)}</td>
+                          <td className="muted">{p.unit}</td>
+                          <td className="num">
+                            <span className={`badge ${p.stock < 10 ? 'b-amber' : 'b-green'}`}>
+                              {p.stock}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="badge b-green">Live</span>
+                          </td>
+                          <td className="right">
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              onClick={() => {
+                                setEditingProduct(p);
+                                setProdForm({
+                                  name: p.name,
+                                  category: p.category,
+                                  price_cents: p.price_cents,
+                                  unit: p.unit || 'each',
+                                  stock: p.stock,
+                                  emoji: p.emoji || '🛒',
+                                  description: p.description || '',
+                                });
+                              }}
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 4: STOREFRONT PROFILE & PREVIEW */}
+          {subView === 'store' && (
+            <div>
+              <div className="page-h">
+                <div>
+                  <h1>Storefront</h1>
+                  <p>How your store appears to shoppers on StoreFront USA.</p>
+                </div>
+              </div>
+
+              <div className="grid" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+                <form className="card form-grid" onSubmit={(e) => { e.preventDefault(); alert('Storefront settings updated'); }}>
+                  <label className="field span4">
+                    Store name
+                    <input className="input" value={storeForm.name} onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })} />
+                  </label>
+                  <label className="field span2">
+                    Category
+                    <input className="input" value={storeForm.category} onChange={(e) => setStoreForm({ ...storeForm, category: e.target.value })} />
+                  </label>
+                  <label className="field span6">
+                    Tagline
+                    <input className="input" value={storeForm.tagline} onChange={(e) => setStoreForm({ ...storeForm, tagline: e.target.value })} />
+                  </label>
+                  <label className="field span6">
+                    About your store
+                    <textarea className="input" value={storeForm.description} onChange={(e) => setStoreForm({ ...storeForm, description: e.target.value })} />
+                  </label>
+                  <label className="field span6">
+                    Street address
+                    <input className="input" value={storeForm.address} onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })} />
+                  </label>
+                  <label className="field span3">
+                    City
+                    <input className="input" value={storeForm.city} onChange={(e) => setStoreForm({ ...storeForm, city: e.target.value })} />
+                  </label>
+                  <label className="field span1">
+                    State
+                    <input className="input" value={storeForm.state} onChange={(e) => setStoreForm({ ...storeForm, state: e.target.value })} />
+                  </label>
+                  <label className="field span2">
+                    ZIP
+                    <input className="input" value={storeForm.zip} onChange={(e) => setStoreForm({ ...storeForm, zip: e.target.value })} />
+                  </label>
+                  <label className="field span2">
+                    Brand Color
+                    <input className="input" type="color" value={storeForm.color} onChange={(e) => setStoreForm({ ...storeForm, color: e.target.value })} style={{ height: 44, padding: 4 }} />
+                  </label>
+                  <label className="field span2">
+                    Emoji Icon
+                    <input className="input" value={storeForm.emoji} onChange={(e) => setStoreForm({ ...storeForm, emoji: e.target.value })} />
+                  </label>
+                  <label className="field span2">
+                    Phone
+                    <input className="input" value={storeForm.phone} onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })} />
+                  </label>
+
+                  <div className="span6">
+                    <button type="submit" className="btn btn-primary">Save storefront</button>
+                  </div>
+                </form>
+
+                {/* Right Column: PREVIEW */}
+                <div>
+                  <div className="small strong muted mb16">LIVE MARKETPLACE PREVIEW</div>
+                  <div className="store-card" style={{ pointerEvents: 'none' }}>
+                    <div className="cover" style={{ background: storeForm.color }}>
+                      <div className="avatar">{storeForm.emoji}</div>
+                    </div>
+                    <div className="body">
+                      <h3 className="mb0">{storeForm.name}</h3>
+                      <div className="muted small">{storeForm.tagline}</div>
+                      <div className="meta">
+                        <span>★ 4.9</span>
+                        <span>· {storeForm.category}</span>
+                        <span>· {products.length} items</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="card mt16">
+                    <h4>Status</h4>
+                    <span className="badge b-green">Live on marketplace</span>
+                    <div className="summary-line mt16">
+                      <span>Commission rate</span>
+                      <b>15%</b>
+                    </div>
+                    <div className="summary-line">
+                      <span>Packaging</span>
+                      <span>Sealed BuckDuck Bags</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 5: PAYOUTS */}
+          {subView === 'payouts' && (
+            <div className="stack" style={{ gap: 20 }}>
+              <div className="page-h">
+                <div>
+                  <h1>Payouts</h1>
+                  <p>Earnings are transferred to your bank through Stripe after each order is delivered.</p>
+                </div>
+              </div>
+
+              <div className="grid g3">
+                <div className="kpi">
+                  <div className="lbl">PENDING EARNINGS</div>
+                  <div className="val">${((payouts?.pendingPayoutCents || 4800) / 100).toFixed(2)}</div>
+                  <div className="sub">Orders not yet delivered</div>
+                </div>
+                <div className="kpi">
+                  <div className="lbl">PAID OUT (LAST 26 WKS)</div>
+                  <div className="val">${((payouts?.totalTransferredCents || 128000) / 100).toFixed(2)}</div>
+                  <div className="sub">After 15% platform commission</div>
+                </div>
+                <div className="card">
+                  <h4>Bank account</h4>
+                  <span className="badge b-green" style={{ marginBottom: 8 }}>Stripe connected</span>
+                  <div className="tiny muted">Bank account ending in •••• 4242</div>
+                  <button className="btn btn-ghost btn-sm mt16" onClick={() => alert('Opening Stripe Connect Express portal...')}>
+                    Open Stripe dashboard
+                  </button>
+                </div>
+              </div>
+
+              <div className="card pad0">
+                <div className="table-wrap">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Delivery day</th>
+                        <th className="num">Orders</th>
+                        <th className="num">Gross sales</th>
+                        <th className="num">Commission</th>
+                        <th className="num">Net payout</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Sat, Oct 17, 2026</strong></td>
+                        <td className="num">8</td>
+                        <td className="num">$480.00</td>
+                        <td className="num">−$72.00</td>
+                        <td className="num strong">$408.00</td>
+                        <td><span className="badge b-green">Transferred</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Sat, Oct 10, 2026</strong></td>
+                        <td className="num">6</td>
+                        <td className="num">$340.00</td>
+                        <td className="num">−$51.00</td>
+                        <td className="num strong">$289.00</td>
+                        <td><span className="badge b-green">Transferred</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* CONFIRM BAG COUNT DIALOG (12a-ready-dialog.png) */}
+      {readyOrder && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="card" style={{ maxWidth: 420, width: '90%', padding: 24 }}>
+            <h3>Confirm Bag Count</h3>
+            <p className="small muted">
+              How many sealed BuckDuck bags was order #{readyOrder.number} packed into? Drivers will verify this count upon collection.
+            </p>
+            <div style={{ margin: '18px 0' }}>
+              <label className="field">
+                Number of sealed bags
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  className="input"
+                  value={bagInput}
+                  onChange={(e) => setBagInput(parseInt(e.target.value) || 1)}
+                />
+              </label>
+            </div>
+            <div className="row" style={{ justifyContent: 'flex-end', gap: 10 }}>
+              <button className="btn btn-ghost" onClick={() => setReadyOrder(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={() => updateOrderStatus(readyOrder.id, 'ready', bagInput)}>
+                Confirm & Mark Ready
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ORDER DETAILS & PACKING SLIP MODAL (12-merchant-order-modal.png) */}
+      {detailOrder && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="card" style={{ maxWidth: 600, width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: 24 }}>
+            <div className="card-h">
+              <h3>Order {detailOrder.number}</h3>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDetailOrder(null)}>✕</button>
+            </div>
+
+            <div className="grid g2" style={{ margin: '14px 0' }}>
+              <div>
+                <div className="tiny muted strong">DELIVERY</div>
+                <div className="strong">{detailOrder.delivery_windows?.label}</div>
+                <div className="small">{detailOrder.users_orders_customer_idTousers?.name}</div>
+              </div>
+              <div>
+                <div className="tiny muted strong">PACKAGING</div>
+                <span className="badge b-gold">🛍️ {detailOrder.bags} BuckDuck bag(s)</span>
+              </div>
+            </div>
+
+            <table className="table" style={{ margin: '16px 0' }}>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th className="num">Qty</th>
+                  <th className="num">Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailOrder.order_items?.map((it: any) => (
+                  <tr key={it.id}>
+                    <td>{it.emoji} {it.name}</td>
+                    <td className="num strong">{it.qty}</td>
+                    <td className="num">${((it.price_cents * it.qty) / 100).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="summary-line">
+              <span>Merchandise subtotal</span>
+              <b>${(detailOrder.subtotal_cents / 100).toFixed(2)}</b>
+            </div>
+            <div className="summary-line">
+              <span>Commission (15%)</span>
+              <span>−${(detailOrder.commission_cents / 100).toFixed(2)}</span>
+            </div>
+            <div className="summary-line total">
+              <span>Your net payout</span>
+              <span>${((detailOrder.subtotal_cents - detailOrder.commission_cents) / 100).toFixed(2)}</span>
+            </div>
+
+            <div style={{ marginTop: 20, textAlign: 'right' }}>
+              <button className="btn btn-primary" onClick={() => setDetailOrder(null)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PRODUCT MODAL */}
+      {editingProduct && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <form className="card form-grid" onSubmit={handleSaveProduct} style={{ maxWidth: 520, width: '90%', padding: 24 }}>
+            <h3 className="span6">{editingProduct.id ? 'Edit product' : 'Add product'}</h3>
+            <label className="field span4">
+              Product name
+              <input className="input" required value={prodForm.name} onChange={(e) => setProdForm({ ...prodForm, name: e.target.value })} />
+            </label>
+            <label className="field span2">
+              Emoji icon
+              <input className="input" value={prodForm.emoji} onChange={(e) => setProdForm({ ...prodForm, emoji: e.target.value })} />
+            </label>
+            <label className="field span2">
+              Price ($)
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                required
+                value={(prodForm.price_cents / 100).toFixed(2)}
+                onChange={(e) => setProdForm({ ...prodForm, price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+              />
+            </label>
+            <label className="field span2">
+              Unit
+              <input className="input" value={prodForm.unit} onChange={(e) => setProdForm({ ...prodForm, unit: e.target.value })} />
+            </label>
+            <label className="field span2">
+              Stock
+              <input className="input" type="number" value={prodForm.stock} onChange={(e) => setProdForm({ ...prodForm, stock: parseInt(e.target.value) || 0 })} />
+            </label>
+            <label className="field span6">
+              Category
+              <input className="input" value={prodForm.category} onChange={(e) => setProdForm({ ...prodForm, category: e.target.value })} />
+            </label>
+            <div className="span6 row" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setEditingProduct(null)}>Cancel</button>
+              <button type="submit" className="btn btn-primary">Save product</button>
+            </div>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
