@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
 
 export default function MerchantPortalPage() {
+  const router = useRouter();
   const { user, demoLogin, logout } = useAuth();
   const [subView, setSubView] = useState<'dash' | 'orders' | 'products' | 'store' | 'payouts'>('dash');
   const [dashboard, setDashboard] = useState<any>(null);
@@ -273,7 +275,10 @@ export default function MerchantPortalPage() {
           <button
             className="btn btn-sm btn-block"
             style={{ background: 'rgba(255,255,255,.08)', color: '#fff' }}
-            onClick={logout}
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
           >
             Sign out
           </button>

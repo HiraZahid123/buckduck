@@ -10,14 +10,16 @@ import { useCart } from '../context/CartContext';
 const searchCache = new Map<string, any[]>();
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { itemCount, addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const mobileWrapperRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Instant runtime search with 120ms debounce and client-side memory caching
@@ -56,7 +58,7 @@ export default function Header() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Handle clicking outside to close dropdown
+  // Handle clicking outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -66,6 +68,12 @@ export default function Header() {
         !mobileWrapperRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+      }
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsAccountOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -89,25 +97,176 @@ export default function Header() {
     }
   };
 
+  const handleSignOut = () => {
+    setIsAccountOpen(false);
+    logout();
+    router.push('/login');
+  };
+
   const accountLink = user ? (
-    user.role === 'customer' ? (
-      <Link href="/account" className="nav-link">
+    <div className="account-dropdown-wrapper" ref={accountMenuRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        className="nav-link"
+        style={{
+          background: 'none',
+          border: 0,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          color: 'inherit',
+          font: 'inherit',
+          padding: '6px 10px',
+          borderRadius: 8,
+        }}
+        onClick={() => setIsAccountOpen(!isAccountOpen)}
+        aria-label="Account menu"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
         <span className="lbl">{user.name?.split(' ')[0] || 'Account'}</span>
-      </Link>
-    ) : (
-      <Link href={`/${user.role}`} className="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ opacity: 0.6 }}>
+          <polyline points="6 9 12 15 18 9" />
         </svg>
-        <span className="lbl">My dashboard</span>
-      </Link>
-    )
+      </button>
+
+      {isAccountOpen && (
+        <div
+          className="card shadow-lg"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            right: 0,
+            width: 230,
+            padding: '12px',
+            background: 'var(--surface, #ffffff)',
+            color: 'var(--ink, #0b1f4b)',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.24)',
+            borderRadius: 12,
+            border: '1px solid var(--line, #e2e8f0)',
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ paddingBottom: 10, borderBottom: '1px solid var(--line, #e2e8f0)', marginBottom: 8 }}>
+            <div className="strong" style={{ fontSize: 14, color: 'var(--ink)' }}>
+              {user.name}
+            </div>
+            <div className="tiny muted" style={{ wordBreak: 'break-all' }}>
+              {user.email}
+            </div>
+            <div style={{ marginTop: 6 }}>
+              <span className="badge b-gold" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                {user.role}
+              </span>
+            </div>
+          </div>
+
+          <div className="stack" style={{ gap: 4 }}>
+            <Link
+              href="/account"
+              className="row"
+              style={{
+                gap: 8,
+                padding: '6px 8px',
+                borderRadius: 6,
+                fontSize: 13,
+                color: 'var(--ink, #0b1f4b)',
+                textDecoration: 'none',
+              }}
+              onClick={() => setIsAccountOpen(false)}
+            >
+              <span>📦</span>
+              <span>My Orders & Account</span>
+            </Link>
+
+            {user.role === 'merchant' && (
+              <Link
+                href="/merchant"
+                className="row"
+                style={{
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: 'var(--ink, #0b1f4b)',
+                  textDecoration: 'none',
+                }}
+                onClick={() => setIsAccountOpen(false)}
+              >
+                <span>🏪</span>
+                <span>Merchant Dashboard</span>
+              </Link>
+            )}
+
+            {user.role === 'driver' && (
+              <Link
+                href="/driver"
+                className="row"
+                style={{
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: 'var(--ink, #0b1f4b)',
+                  textDecoration: 'none',
+                }}
+                onClick={() => setIsAccountOpen(false)}
+              >
+                <span>🚗</span>
+                <span>Driver Portal</span>
+              </Link>
+            )}
+
+            {user.role === 'admin' && (
+              <Link
+                href="/admin"
+                className="row"
+                style={{
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: 'var(--ink, #0b1f4b)',
+                  textDecoration: 'none',
+                }}
+                onClick={() => setIsAccountOpen(false)}
+              >
+                <span>⚙️</span>
+                <span>Admin Console</span>
+              </Link>
+            )}
+
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              style={{
+                width: '100%',
+                marginTop: 6,
+                padding: '6px 8px',
+                justifyContent: 'flex-start',
+                color: '#dc2626',
+                borderTop: '1px solid var(--line, #e2e8f0)',
+                borderRadius: '0 0 6px 6px',
+                display: 'flex',
+                gap: 8,
+                alignItems: 'center',
+              }}
+              onClick={handleSignOut}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   ) : (
     <Link href="/login" className="nav-link">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

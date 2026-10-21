@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
 
 export default function AdminConsolePage() {
-  const { user, demoLogin } = useAuth();
+  const router = useRouter();
+  const { user, demoLogin, logout } = useAuth();
   const [subView, setSubView] = useState<'overview' | 'dispatch' | 'orders' | 'stores' | 'users' | 'drivers' | 'windows' | 'finance' | 'settings'>('overview');
   const [overview, setOverview] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -255,7 +257,10 @@ export default function AdminConsolePage() {
           <button
             className="btn btn-sm btn-block"
             style={{ background: 'rgba(255,255,255,.08)', color: '#fff' }}
-            onClick={() => demoLogin('customer')}
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
           >
             Sign out
           </button>

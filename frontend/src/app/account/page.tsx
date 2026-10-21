@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
 export default function AccountPage() {
-  const { user, demoLogin, logout } = useAuth();
+  const router = useRouter();
+  const { user, loading: authLoading, logout } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -13,17 +15,21 @@ export default function AccountPage() {
   const [phoneInput, setPhoneInput] = useState('');
 
   useEffect(() => {
-    if (!user) {
-      demoLogin('customer');
-    } else {
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user) {
       setNameInput(user.name || '');
       setPhoneInput(user.phone || '');
+      loadOrders();
     }
-  }, [user]);
+  }, [user, authLoading]);
 
   const loadOrders = async () => {
     const token = localStorage.getItem('bd_token');
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/orders/my-orders', {
@@ -40,9 +46,10 @@ export default function AccountPage() {
     }
   };
 
-  useEffect(() => {
-    loadOrders();
-  }, [user]);
+  const handleSignOut = () => {
+    logout();
+    router.push('/login');
+  };
 
   const activeOrders = orders.filter(
     (o) => !['delivered', 'cancelled', 'refunded'].includes(o.status)
@@ -127,6 +134,19 @@ export default function AccountPage() {
     );
   };
 
+  if (!user && !authLoading) {
+    return (
+      <div className="container section center" style={{ padding: '80px 20px' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <h2>Sign In Required</h2>
+        <p className="muted">Please sign in to view your orders and account settings.</p>
+        <Link href="/login" className="btn btn-primary mt16">
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="container section">
       {/* Top Profile Bar */}
@@ -147,7 +167,7 @@ export default function AccountPage() {
           >
             Edit profile
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={logout}>
+          <button className="btn btn-ghost btn-sm" onClick={handleSignOut}>
             <svg
               width="16"
               height="16"

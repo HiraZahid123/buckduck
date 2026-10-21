@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
 
 export default function DriverAppPage() {
+  const router = useRouter();
   const { user, demoLogin, logout } = useAuth();
   const [subView, setSubView] = useState<'home' | 'available' | 'route' | 'earnings'>('home');
   const [isOnline, setIsOnline] = useState(true);
@@ -206,7 +208,10 @@ export default function DriverAppPage() {
             <button
               className="icon-btn"
               style={{ background: 'rgba(255,255,255,.1)', border: 0, color: '#fff' }}
-              onClick={logout}
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
               aria-label="Sign out"
               title="Sign out"
             >
