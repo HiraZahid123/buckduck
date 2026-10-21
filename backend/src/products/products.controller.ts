@@ -10,8 +10,9 @@ export class ProductsController {
     @Query('q') query?: string,
     @Query('category') category?: string,
     @Query('store_id') storeId?: number,
+    @Query('limit') limit?: number,
   ) {
-    return this.productsService.findAll(query, category, storeId);
+    return this.productsService.findAll(query, category, storeId, limit);
   }
 
   @Get(':id')

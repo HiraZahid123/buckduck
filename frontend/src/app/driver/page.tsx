@@ -145,11 +145,40 @@ export default function DriverAppPage() {
 
   const formatMoney = (cents: number) => `$${((cents || 0) / 100).toFixed(2)}`;
 
+  // Mobile native mode vs desktop simulator toggle
+  const [isNativeMode, setIsNativeMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 640) {
+      setIsNativeMode(true);
+    }
+  }, []);
+
   return (
-    <div className="driver-shell">
-      <div className="phone">
-        {/* DRIVER HEADER */}
-        <div className="d-head">
+    <>
+      {/* Top Preview Mode Switcher (Desktop utility) */}
+      <div className="driver-mode-toggle no-print">
+        <span>Driver App View:</span>
+        <button
+          type="button"
+          className={!isNativeMode ? 'active' : ''}
+          onClick={() => setIsNativeMode(false)}
+        >
+          📱 Simulator Bezel
+        </button>
+        <button
+          type="button"
+          className={isNativeMode ? 'active' : ''}
+          onClick={() => setIsNativeMode(true)}
+        >
+          📲 Fullscreen Mobile / PWA
+        </button>
+      </div>
+
+      <div className={`driver-shell ${isNativeMode ? 'native-mode' : ''}`}>
+        <div className="phone">
+          {/* DRIVER HEADER */}
+          <div className="d-head">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <div className="row" style={{ gap: 10 }}>
               <svg width="34" height="34" viewBox="0 0 48 48">
@@ -694,5 +723,6 @@ export default function DriverAppPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

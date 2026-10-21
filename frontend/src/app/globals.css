@@ -284,3 +284,159 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
     height: auto;
   }
 }
+
+/* ================= LIVE RUNTIME SEARCH DROPDOWN ================= */
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 520px;
+}
+.live-search-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(6, 18, 46, 0.25);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  z-index: 100;
+  animation: pop .18s ease-out;
+  color: var(--ink);
+}
+.live-search-header {
+  padding: 8px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.live-search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none!important;
+  color: inherit;
+  transition: background .12s;
+}
+.live-search-item:hover {
+  background: var(--blue-50);
+}
+.live-search-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex: none;
+  overflow: hidden;
+}
+.live-search-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.live-search-info {
+  flex: 1;
+  min-width: 0;
+}
+.live-search-info .title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-search-info .sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+.live-search-price {
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--navy-900);
+  margin-right: 6px;
+}
+.live-search-footer {
+  padding: 12px 14px;
+  background: var(--surface-2);
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--blue-700);
+  cursor: pointer;
+  display: block;
+  text-decoration: none!important;
+}
+.live-search-footer:hover {
+  background: var(--blue-100);
+}
+
+/* Mobile search bar */
+.mobile-search-bar {
+  display: none;
+  padding: 10px 16px;
+  background: var(--navy-900);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (max-width: 640px) {
+  .nav .search { display: none; }
+  .mobile-search-bar { display: block; }
+}
+
+/* Driver Native vs Phone Simulator Mode */
+.driver-shell.native-mode {
+  background: var(--bg);
+}
+.driver-shell.native-mode .phone {
+  max-width: 100%;
+  box-shadow: none;
+  border-radius: 0;
+}
+.driver-shell.native-mode .d-head {
+  border-radius: 0 0 20px 20px;
+}
+.driver-shell.native-mode .d-nav {
+  max-width: 100%;
+}
+.driver-mode-toggle {
+  display: flex;
+  justify-content: center;
+  background: #06122E;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  gap: 12px;
+  align-items: center;
+}
+.driver-mode-toggle button {
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+.driver-mode-toggle button.active {
+  background: var(--gold-metal);
+  color: var(--navy-950);
+}

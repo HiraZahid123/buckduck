@@ -1,21 +1,91 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
+// Client-side cache to eliminate repeated network fetches for previously typed queries
+const searchCache = new Map<string, any[]>();
+
 export default function Header() {
-  const { user, logout } = useAuth();
-  const { itemCount } = useCart();
+  const { user } = useAuth();
+  const { itemCount, addToCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const mobileWrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  const handleSearch = (e: React.FormEvent) => {
+  // Instant runtime search with 120ms debounce and client-side memory caching
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setResults([]);
+      setIsDropdownOpen(false);
+      return;
+    }
+
+    // Check client cache first for sub-millisecond response
+    if (searchCache.has(q.toLowerCase())) {
+      setResults(searchCache.get(q.toLowerCase()) || []);
+      setIsDropdownOpen(true);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?q=${encodeURIComponent(q)}&limit=6`);
+        if (res.ok) {
+          const data = await res.json();
+          searchCache.set(q.toLowerCase(), data);
+          setResults(data);
+          setIsDropdownOpen(true);
+        }
+      } catch (err) {
+        console.error('Live search error', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handle clicking outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchWrapperRef.current &&
+        !searchWrapperRef.current.contains(event.target as Node) &&
+        mobileWrapperRef.current &&
+        !mobileWrapperRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setIsDropdownOpen(false);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleSelectProduct = (product: any) => {
+    setIsDropdownOpen(false);
+    if (product.stores?.slug) {
+      router.push(`/stores/${product.stores.slug}`);
+    } else {
+      router.push(`/search?q=${encodeURIComponent(product.name)}`);
     }
   };
 
@@ -107,28 +177,111 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Search bar */}
-          <form className="search" onSubmit={handleSearch} role="search">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              name="q"
-              placeholder="Search plantains, palm oil, goat meat…"
-              aria-label="Search products"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </form>
+          {/* Search bar with live runtime dropdown (Desktop) */}
+          <div className="search-wrapper" ref={searchWrapperRef}>
+            <form className="search" onSubmit={handleSearchSubmit} role="search" style={{ width: '100%', margin: 0 }}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                name="q"
+                placeholder="Search plantains, palm oil, goat meat…"
+                aria-label="Search products"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (results.length > 0) setIsDropdownOpen(true);
+                }}
+              />
+            </form>
+
+            {/* LIVE SEARCH DROPDOWN OVERLAY */}
+            {isDropdownOpen && searchQuery.trim().length > 0 && (
+              <div className="live-search-dropdown">
+                <div className="live-search-header">
+                  <span>{isSearching ? 'Searching...' : `Found ${results.length} item${results.length === 1 ? '' : 's'}`}</span>
+                  <span className="tiny muted">Press Enter to view all</span>
+                </div>
+
+                {results.length > 0 ? (
+                  <>
+                    {results.map((product) => (
+                      <div
+                        key={product.id}
+                        className="live-search-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => handleSelectProduct(product)}
+                      >
+                        <div className="live-search-thumb">
+                          {product.image_url ? (
+                            <img src={product.image_url} alt={product.name} />
+                          ) : (
+                            <span>{product.emoji || '🛒'}</span>
+                          )}
+                        </div>
+
+                        <div className="live-search-info">
+                          <div className="title">{product.name}</div>
+                          <div className="sub">
+                            <span>{product.stores?.name || 'Local Store'}</span>
+                            <span>·</span>
+                            <span className="muted">{product.unit || '1 lb'}</span>
+                          </div>
+                        </div>
+
+                        <div className="row" style={{ gap: 8, flexShrink: 0 }}>
+                          <span className="live-search-price">
+                            ${((product.price_cents || 0) / 100).toFixed(2)}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-gold"
+                            style={{ padding: '4px 10px', fontSize: 12 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart({
+                                ...product,
+                                stores: product.stores || {
+                                  id: product.store_id,
+                                  name: 'Local Store',
+                                },
+                              });
+                            }}
+                          >
+                            + Add
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div
+                      className="live-search-footer"
+                      onClick={handleSearchSubmit}
+                    >
+                      View all results for &quot;{searchQuery}&quot; →
+                    </div>
+                  </>
+                ) : (
+                  !isSearching && (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+                      <div style={{ fontSize: 28, marginBottom: 4 }}>🔎</div>
+                      <div className="strong" style={{ fontSize: 14 }}>No products found</div>
+                      <div className="tiny muted mt8">Try searching for plantain, yam, goat, gari, palm oil, or spices</div>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Links */}
           <nav className="nav-links">
@@ -168,6 +321,119 @@ export default function Header() {
           </nav>
         </div>
       </header>
+
+      {/* Mobile-dedicated search bar */}
+      <div className="mobile-search-bar no-print" ref={mobileWrapperRef}>
+        <div style={{ position: 'relative' }}>
+          <form className="search" onSubmit={handleSearchSubmit} role="search" style={{ display: 'block', width: '100%', margin: 0 }}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              type="text"
+              name="q-mobile"
+              placeholder="Search plantains, palm oil, goat meat…"
+              aria-label="Search products mobile"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => {
+                if (results.length > 0) setIsDropdownOpen(true);
+              }}
+            />
+          </form>
+
+          {/* Mobile Dropdown */}
+          {isDropdownOpen && searchQuery.trim().length > 0 && (
+            <div className="live-search-dropdown" style={{ top: '100%' }}>
+              <div className="live-search-header">
+                <span>{isSearching ? 'Searching...' : `Found ${results.length} item${results.length === 1 ? '' : 's'}`}</span>
+                <button
+                  type="button"
+                  style={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 13 }}
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {results.length > 0 ? (
+                <>
+                  {results.map((product) => (
+                    <div
+                      key={product.id}
+                      className="live-search-item"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleSelectProduct(product)}
+                    >
+                      <div className="live-search-thumb">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} />
+                        ) : (
+                          <span>{product.emoji || '🛒'}</span>
+                        )}
+                      </div>
+
+                      <div className="live-search-info">
+                        <div className="title">{product.name}</div>
+                        <div className="sub">
+                          <span>{product.stores?.name || 'Local Store'}</span>
+                          <span>·</span>
+                          <span className="muted">{product.unit || '1 lb'}</span>
+                        </div>
+                      </div>
+
+                      <div className="row" style={{ gap: 8, flexShrink: 0 }}>
+                        <span className="live-search-price">
+                          ${((product.price_cents || 0) / 100).toFixed(2)}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-gold"
+                          style={{ padding: '4px 8px', fontSize: 11 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart({
+                              ...product,
+                              stores: product.stores || {
+                                id: product.store_id,
+                                name: 'Local Store',
+                              },
+                            });
+                          }}
+                        >
+                          + Add
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div
+                    className="live-search-footer"
+                    onClick={handleSearchSubmit}
+                  >
+                    View all results for &quot;{searchQuery}&quot; →
+                  </div>
+                </>
+              ) : (
+                !isSearching && (
+                  <div style={{ padding: '20px 16px', textAlign: 'center', color: 'var(--ink-3)' }}>
+                    <div style={{ fontSize: 24, marginBottom: 4 }}>🔎</div>
+                    <div className="strong" style={{ fontSize: 13 }}>No products found</div>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }
