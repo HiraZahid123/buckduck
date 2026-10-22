@@ -5,6 +5,25 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
+import {
+  BarChart2,
+  List,
+  Truck,
+  Store as StoreIcon,
+  Users as UsersIcon,
+  Calendar,
+  MapPin,
+  DollarSign,
+  Settings as SettingsIcon,
+  LogOut,
+  Search,
+  Check,
+  X,
+  ShoppingBag,
+  Trash2,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
 
 export interface ServiceZip {
   zip: string;
@@ -353,79 +372,92 @@ export default function AdminConsolePage() {
           </div>
         </div>
 
-        <div className="side-sec">Menu</div>
+        <div
+          className="side-sec"
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.4)',
+            padding: '12px 14px 6px',
+          }}
+        >
+          MENU
+        </div>
+
         <button
           className={`side-link ${subView === 'overview' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('overview')}
         >
-          <span>📊</span>
+          <BarChart2 size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'overview' ? 1 : 0.75 }} />
           <span>Overview</span>
         </button>
 
         <button
           className={`side-link ${subView === 'orders' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('orders')}
         >
-          <span>📋</span>
+          <List size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'orders' ? 1 : 0.75 }} />
           <span>Orders</span>
           <span className="cnt" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>{orders.length}</span>
         </button>
 
         <button
           className={`side-link ${subView === 'dispatch' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('dispatch')}
         >
-          <span>🚚</span>
+          <Truck size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'dispatch' ? 1 : 0.75 }} />
           <span>Dispatch</span>
           {unassignedCount > 0 && <span className="cnt">{unassignedCount}</span>}
         </button>
 
         <button
           className={`side-link ${subView === 'stores' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('stores')}
         >
-          <span>🏪</span>
+          <StoreIcon size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'stores' ? 1 : 0.75 }} />
           <span>Stores</span>
           {pendingStoresCount > 0 && <span className="cnt" style={{ background: 'var(--amber)' }}>{pendingStoresCount}</span>}
         </button>
 
         <button
           className={`side-link ${subView === 'users' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('users')}
         >
-          <span>👥</span>
+          <UsersIcon size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'users' ? 1 : 0.75 }} />
           <span>Users</span>
         </button>
 
         <button
           className={`side-link ${subView === 'drivers' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('drivers')}
         >
-          <span>🚚</span>
+          <Truck size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'drivers' ? 1 : 0.75 }} />
           <span>Drivers</span>
         </button>
 
         <button
           className={`side-link ${subView === 'windows' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('windows')}
         >
-          <span>📅</span>
+          <Calendar size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'windows' ? 1 : 0.75 }} />
           <span>Delivery windows</span>
         </button>
 
         <button
           className={`side-link ${subView === 'zones' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('zones')}
         >
-          <span>📍</span>
+          <MapPin size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'zones' ? 1 : 0.75 }} />
           <span>Service zones & ZIPs</span>
           <span className="cnt" style={{ background: 'var(--gold-metal)', color: 'var(--navy-950)', fontWeight: 700 }}>
             {zipList.filter((z) => z.active).length}
@@ -434,39 +466,74 @@ export default function AdminConsolePage() {
 
         <button
           className={`side-link ${subView === 'finance' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('finance')}
         >
-          <span>💵</span>
+          <DollarSign size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'finance' ? 1 : 0.75 }} />
           <span>Finance</span>
         </button>
 
         <button
           className={`side-link ${subView === 'settings' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => setSubView('settings')}
         >
-          <span>⚙️</span>
+          <SettingsIcon size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'settings' ? 1 : 0.75 }} />
           <span>Settings</span>
         </button>
 
-        <div className="side-foot">
-          <div className="row" style={{ gap: 10, marginBottom: 12 }}>
-            <div className="avatar-sm" style={{ background: 'var(--gold-metal)', color: 'var(--navy-950)' }}>A</div>
+        <div className="side-foot" style={{ marginTop: 'auto', paddingTop: 16 }}>
+          <div className="row" style={{ gap: 12, marginBottom: 14 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #F7E08B, #D4A017)',
+                color: '#0B1F4B',
+                fontWeight: 800,
+                fontSize: 14,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              BO
+            </div>
             <div className="grow" style={{ minWidth: 0 }}>
-              <div className="strong small" style={{ color: '#fff' }}>BuckDuck Ops</div>
-              <div className="tiny" style={{ opacity: 0.6 }}>ops@buckduck.com</div>
+              <div className="strong small" style={{ color: '#fff', fontSize: 13 }}>
+                BuckDuck Operations
+              </div>
+              <div className="tiny" style={{ opacity: 0.55, fontSize: 11 }}>
+                admin@buckduck.com
+              </div>
             </div>
           </div>
           <button
             className="btn btn-sm btn-block"
-            style={{ background: 'rgba(255,255,255,.08)', color: '#fff' }}
+            style={{
+              background: 'rgba(255,255,255,0.08)',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: 999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '9px 16px',
+              fontWeight: 600,
+              fontSize: 13,
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
             onClick={() => {
               logout();
               router.push('/login');
             }}
           >
-            Sign out
+            <LogOut size={15} strokeWidth={2.2} />
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
@@ -1446,8 +1513,8 @@ export default function AdminConsolePage() {
             <div className="stack" style={{ gap: 20 }}>
               <div className="page-h">
                 <div>
-                  <div className="row" style={{ gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: 24 }}>📍</span>
+                  <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+                    <MapPin size={24} style={{ color: 'var(--gold-metal, #D4A017)' }} />
                     <h1 style={{ margin: 0 }}>Service zones & delivery ZIP codes</h1>
                   </div>
                   <p style={{ marginTop: 6, color: 'var(--muted)' }}>
@@ -1457,15 +1524,15 @@ export default function AdminConsolePage() {
                 </div>
                 <div className="row" style={{ gap: 10, alignItems: 'center' }}>
                   <span className="badge b-gold" style={{ padding: '6px 12px', fontSize: 13, fontWeight: 700 }}>
-                    ✓ {zipList.filter((z) => z.active).length} Active ZIP Codes
+                    <Check size={14} style={{ marginRight: 4 }} /> {zipList.filter((z) => z.active).length} Active ZIP Codes
                   </span>
                   {isSavingZip ? (
-                    <span className="badge b-gray" style={{ padding: '6px 10px', fontSize: 12 }}>
-                      🔄 Syncing with DB...
+                    <span className="badge b-gray" style={{ padding: '6px 10px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <RefreshCw size={12} className="spin" /> Syncing with DB...
                     </span>
                   ) : (
-                    <span className="badge b-green" style={{ padding: '6px 10px', fontSize: 12 }}>
-                      ● Database synced
+                    <span className="badge b-green" style={{ padding: '6px 10px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Check size={12} /> Database synced
                     </span>
                   )}
                 </div>
@@ -1535,7 +1602,10 @@ export default function AdminConsolePage() {
               <div className="card" style={{ padding: 20 }}>
                 <div className="card-h" style={{ marginBottom: 16 }}>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 16 }}>➕ Add new service ZIP code</h3>
+                    <h3 style={{ margin: 0, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Plus size={18} style={{ color: 'var(--gold-metal, #D4A017)' }} />
+                      <span>Add new service ZIP code</span>
+                    </h3>
                     <p className="tiny muted" style={{ margin: '4px 0 0' }}>
                       Register an individual ZIP code to open customer orders and driver routes in that area.
                     </p>
@@ -1635,7 +1705,7 @@ export default function AdminConsolePage() {
                   }}
                 >
                   <div className="row" style={{ gap: 10, alignItems: 'center', flex: 1, minWidth: 260 }}>
-                    <span style={{ fontSize: 16 }}>🔍</span>
+                    <Search size={16} style={{ color: 'var(--ink-3)' }} />
                     <input
                       className="input"
                       placeholder="Search active ZIP, city, or zone name..."
@@ -1753,9 +1823,10 @@ export default function AdminConsolePage() {
                                 className="btn btn-ghost btn-sm"
                                 onClick={() => handleDeleteZip(item.zip)}
                                 title="Remove ZIP from service area"
-                                style={{ color: 'var(--red, #e53935)', padding: '4px 8px' }}
+                                style={{ color: 'var(--red, #e53935)', padding: '4px 8px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                               >
-                                🗑️ Remove
+                                <Trash2 size={13} />
+                                <span>Remove</span>
                               </button>
                             </td>
                           </tr>
@@ -1933,9 +2004,9 @@ export default function AdminConsolePage() {
                 type="button"
                 className="icon-btn"
                 onClick={() => setModalOrder(null)}
-                style={{ border: 'none', background: 'var(--surface-2)', fontSize: 16, cursor: 'pointer' }}
+                style={{ border: 'none', background: 'var(--surface-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -1976,7 +2047,8 @@ export default function AdminConsolePage() {
                       fontWeight: 700,
                     }}
                   >
-                    🛍️ {modalOrder.bags || 1} BuckDuck bag
+                    <ShoppingBag size={13} style={{ color: 'var(--gold-400)' }} />
+                    <span>{modalOrder.bags || 1} BuckDuck bag</span>
                   </span>
                 </div>
               </div>
