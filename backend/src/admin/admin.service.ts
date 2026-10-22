@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AdminService {
@@ -248,5 +249,119 @@ export class AdminService {
       summary,
       recentSettlements: orders.slice(0, 15),
     };
+  }
+
+  async createUser(data: { name: string; email: string; role: string; phone?: string; password?: string; status?: string; vehicle?: string }) {
+    const cleanEmail = data.email.toLowerCase().trim();
+    const existing = await this.prisma.users.findUnique({
+      where: { email: cleanEmail },
+    });
+    if (existing) {
+      throw new BadRequestException('A user with this email already exists');
+    }
+    const rawPassword = data.password && data.password.trim() ? data.password.trim() : 'welcome123';
+    const password_hash = bcrypt.hashSync(rawPassword, 10);
+    const now = new Date();
+
+    return this.prisma.users.create({
+      data: {
+        name: data.name.trim(),
+        email: cleanEmail,
+        role: data.role || 'customer',
+        phone: data.phone?.trim() || null,
+        vehicle: data.vehicle?.trim() || null,
+        status: data.status || 'active',
+        password_hash,
+        driver_online: false,
+        created_at: now,
+        updated_at: now,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        phone: true,
+        status: true,
+        vehicle: true,
+        driver_online: true,
+        created_at: true,
+      },
+    });
+  }
+
+  async createStore(data: {
+    name: string;
+    slug?: string;
+    ownerId?: number;
+    ownerEmail?: string;
+    category?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    phone?: string;
+    commissionRate?: number;
+    status?: string;
+    color?: string;
+    emoji?: string;
+  }) {
+    let ownerId = Number(data.ownerId);
+    if (!ownerId && data.ownerEmail) {
+      const owner = await this.prisma.users.findUnique({ where: { email: data.ownerEmail.toLowerCase().trim() } });
+      if (owner) ownerId = owner.id;
+    }
+    if (!ownerId) {
+      const merchant = await this.prisma.users.findFirst({ where: { role: 'merchant' } });
+      if (merchant) {
+        ownerId = merchant.id;
+      } else {
+        const admin = await this.prisma.users.findFirst({ where: { role: 'admin' } });
+        ownerId = admin?.id || 1;
+      }
+    }
+
+    let slug = data.slug?.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (!slug) {
+      slug = data.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    }
+
+    const existingSlug = await this.prisma.stores.findUnique({ where: { slug } });
+    if (existingSlug) {
+      slug = `${slug}-${Date.now().toString().slice(-4)}`;
+    }
+
+    const now = new Date();
+    return this.prisma.stores.create({
+      data: {
+        name: data.name.trim(),
+        slug,
+        owner_id: ownerId,
+        category: data.category || 'Groceries',
+        address: data.address || null,
+        city: data.city || 'Silver Spring',
+        state: data.state || 'MD',
+        zip: data.zip || '20910',
+        phone: data.phone || null,
+        commission_rate: data.commissionRate !== undefined ? Number(data.commissionRate) : 0.15,
+        status: data.status || 'approved',
+        color: data.color || '#1E3A8A',
+        emoji: data.emoji || '🏪',
+        rating: 5.0,
+        created_at: now,
+        updated_at: now,
+      },
+      include: {
+        users: { select: { name: true, email: true } },
+        _count: { select: { orders: true, products: true } },
+      },
+    });
+  }
+
+  async createDriver(data: { name: string; email: string; phone?: string; vehicle?: string; password?: string }) {
+    return this.createUser({
+      ...data,
+      role: 'driver',
+    });
   }
 }

@@ -34,10 +34,11 @@ export default function DriverAppPage() {
   };
 
   useEffect(() => {
-    if (!user || user.role !== 'driver') {
-      demoLogin('driver');
+    const token = localStorage.getItem('bd_token');
+    if (!token && (!user || user.role !== 'driver')) {
+      // Allow real user session
     }
-  }, []);
+  }, [user]);
 
   const loadDriverData = async () => {
     const token = localStorage.getItem('bd_token');

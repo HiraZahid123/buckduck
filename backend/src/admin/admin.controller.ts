@@ -56,6 +56,21 @@ export class AdminController {
     return this.adminService.getAllUsers();
   }
 
+  @Post('users')
+  async createUser(@Body() body: any) {
+    return this.adminService.createUser(body);
+  }
+
+  @Post('stores')
+  async createStore(@Body() body: any) {
+    return this.adminService.createStore(body);
+  }
+
+  @Post('drivers')
+  async createDriver(@Body() body: any) {
+    return this.adminService.createDriver(body);
+  }
+
   @Put('users/:id/status')
   async updateUserStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.adminService.updateUserStatus(Number(id), body.status);

@@ -25,10 +25,16 @@ export default function LoginPage() {
     try {
       if (isRegister) {
         await register({ email, password, name, role, phone, vehicle });
+        if (role === 'merchant') router.push('/merchant');
+        else if (role === 'driver') router.push('/driver');
+        else router.push('/');
       } else {
-        await login(email, password);
+        const u: any = await login(email, password);
+        if (u?.role === 'admin') router.push('/admin');
+        else if (u?.role === 'merchant') router.push('/merchant');
+        else if (u?.role === 'driver') router.push('/driver');
+        else router.push('/');
       }
-      router.push('/');
     } catch (err: any) {
       setErrorMsg(err.message || 'Authentication failed');
     } finally {

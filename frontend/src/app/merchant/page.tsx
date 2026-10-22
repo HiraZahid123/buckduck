@@ -103,10 +103,11 @@ export default function MerchantPortalPage() {
   };
 
   useEffect(() => {
-    if (!user || user.role !== 'merchant') {
-      demoLogin('merchant');
+    const token = localStorage.getItem('bd_token');
+    if (!token && (!user || user.role !== 'merchant')) {
+      // Allow real user session
     }
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
     const token = localStorage.getItem('bd_token');

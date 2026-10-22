@@ -50,7 +50,7 @@ const DEFAULT_ZIPS: ServiceZip[] = [
 
 export default function AdminConsolePage() {
   const router = useRouter();
-  const { user, demoLogin, logout } = useAuth();
+  const { user, login, demoLogin, logout } = useAuth();
   const [subView, setSubView] = useState<'overview' | 'dispatch' | 'orders' | 'stores' | 'users' | 'drivers' | 'windows' | 'zones' | 'finance' | 'settings'>('overview');
   const [overview, setOverview] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
@@ -90,11 +90,41 @@ export default function AdminConsolePage() {
   const [newWinEnd, setNewWinEnd] = useState('19:00');
   const [newWinCapacity, setNewWinCapacity] = useState(80);
 
+  // Add User Modal states
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'customer' | 'merchant' | 'driver' | 'admin'>('customer');
+  const [newUserPassword, setNewUserPassword] = useState('');
+
+  // Add Store Modal states
+  const [showAddStoreModal, setShowAddStoreModal] = useState(false);
+  const [newStoreName, setNewStoreName] = useState('');
+  const [newStoreCategory, setNewStoreCategory] = useState('Groceries');
+  const [newStoreOwnerEmail, setNewStoreOwnerEmail] = useState('');
+  const [newStoreAddress, setNewStoreAddress] = useState('');
+  const [newStoreCity, setNewStoreCity] = useState('Silver Spring');
+  const [newStoreState, setNewStoreState] = useState('MD');
+  const [newStoreZip, setNewStoreZip] = useState('20910');
+  const [newStorePhone, setNewStorePhone] = useState('');
+  const [newStoreCommission, setNewStoreCommission] = useState(0.15);
+  const [newStoreStatus, setNewStoreStatus] = useState('approved');
+
+  // Add Driver Modal states
+  const [showAddDriverModal, setShowAddDriverModal] = useState(false);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [newDriverEmail, setNewDriverEmail] = useState('');
+  const [newDriverPhone, setNewDriverPhone] = useState('');
+  const [newDriverVehicle, setNewDriverVehicle] = useState('Toyota Sienna · Silver');
+  const [newDriverPassword, setNewDriverPassword] = useState('');
+
   useEffect(() => {
-    if (!user || user.role !== 'admin') {
-      demoLogin('admin');
+    const token = localStorage.getItem('bd_token');
+    if (!token && (!user || user.role !== 'admin')) {
+      setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const loadData = async () => {
     const token = localStorage.getItem('bd_token');
@@ -381,6 +411,119 @@ export default function AdminConsolePage() {
     } catch {}
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName.trim() || !newUserEmail.trim()) {
+      alert('Please fill in Name and Email.');
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: newUserName.trim(),
+          email: newUserEmail.trim(),
+          role: newUserRole,
+          phone: newUserPhone.trim(),
+          password: newUserPassword.trim() || 'welcome123',
+        }),
+      });
+      if (res.ok) {
+        setShowAddUserModal(false);
+        setNewUserName('');
+        setNewUserEmail('');
+        setNewUserPhone('');
+        setNewUserPassword('');
+        await loadData();
+        alert('User account created successfully!');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Failed to create user');
+      }
+    } catch {
+      alert('Error creating user');
+    }
+  };
+
+  const handleCreateStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStoreName.trim()) {
+      alert('Please enter a Store Name.');
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/admin/stores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: newStoreName.trim(),
+          category: newStoreCategory,
+          ownerEmail: newStoreOwnerEmail.trim(),
+          address: newStoreAddress.trim(),
+          city: newStoreCity.trim() || 'Silver Spring',
+          state: newStoreState.trim() || 'MD',
+          zip: newStoreZip.trim() || '20910',
+          phone: newStorePhone.trim(),
+          commissionRate: Number(newStoreCommission) || 0.15,
+          status: newStoreStatus,
+        }),
+      });
+      if (res.ok) {
+        setShowAddStoreModal(false);
+        setNewStoreName('');
+        setNewStoreAddress('');
+        setNewStorePhone('');
+        await loadData();
+        alert('Store created and listed successfully!');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Failed to create store');
+      }
+    } catch {
+      alert('Error creating store');
+    }
+  };
+
+  const handleCreateDriver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDriverName.trim() || !newDriverEmail.trim()) {
+      alert('Please fill in Driver Name and Email.');
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/admin/drivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name: newDriverName.trim(),
+          email: newDriverEmail.trim(),
+          phone: newDriverPhone.trim(),
+          vehicle: newDriverVehicle.trim() || 'Standard Delivery Vehicle',
+          password: newDriverPassword.trim() || 'welcome123',
+        }),
+      });
+      if (res.ok) {
+        setShowAddDriverModal(false);
+        setNewDriverName('');
+        setNewDriverEmail('');
+        setNewDriverPhone('');
+        setNewDriverVehicle('Toyota Sienna · Silver');
+        setNewDriverPassword('');
+        await loadData();
+        alert('Driver registered successfully in the fleet!');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Failed to register driver');
+      }
+    } catch {
+      alert('Error registering driver');
+    }
+  };
+
   const unassignedCount = dispatch?.unassignedReadyOrders?.length || 0;
   const pendingStoresCount = stores.filter((s) => s.status === 'pending').length;
 
@@ -431,6 +574,60 @@ export default function AdminConsolePage() {
   const filteredUsers = userRoleFilter
     ? users.filter((u) => u.role === userRoleFilter)
     : users;
+
+  if (!loading && (!user || user.role !== 'admin')) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', padding: 20 }}>
+        <div className="card" style={{ maxWidth: 460, width: '100%', padding: '36px 32px', borderRadius: 16, textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.08)', background: '#fff' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', color: '#0F172A' }}>Admin Console</h2>
+          <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 24px' }}>
+            Please sign in with an Administrator account to access operational controls and settings.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Link
+              href="/login"
+              className="btn btn-primary"
+              style={{
+                padding: '12px 24px',
+                borderRadius: 999,
+                fontWeight: 700,
+                textDecoration: 'none',
+                background: '#0B1527',
+                color: '#fff',
+                textAlign: 'center',
+              }}
+            >
+              Sign In to Your Account
+            </Link>
+            <button
+              type="button"
+              className="btn btn-gold"
+              onClick={async () => {
+                try {
+                  await login('admin@buckduck.com', 'admin1234');
+                  await loadData();
+                } catch {
+                  alert('Admin sign in failed. Please check backend.');
+                }
+              }}
+              style={{
+                padding: '12px 24px',
+                borderRadius: 999,
+                fontWeight: 700,
+                background: '#E0A82E',
+                color: '#1E293B',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Quick Sign In as Admin (admin@buckduck.com)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="portal">
@@ -1345,11 +1542,31 @@ export default function AdminConsolePage() {
           {/* SCREEN 4: STORES (33-admin-stores.png) */}
           {subView === 'stores' && (
             <div>
-              <div className="page-h">
+              <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1>Stores</h1>
-                  <p>Approve new merchants, set commission and manage storefronts.</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Stores</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>Approve new merchants, set commission and manage storefronts.</p>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowAddStoreModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 22px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    background: '#E0A82E',
+                    color: '#1E293B',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add store</span>
+                </button>
               </div>
 
               <div className="card pad0">
@@ -1419,11 +1636,31 @@ export default function AdminConsolePage() {
           {/* SCREEN 5: USERS (34-admin-users.png) */}
           {subView === 'users' && (
             <div>
-              <div className="page-h">
+              <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1>Users</h1>
-                  <p>{filteredUsers.length} accounts in database</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Users</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>{filteredUsers.length} accounts in database</p>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowAddUserModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 22px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    background: '#E0A82E',
+                    color: '#1E293B',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add user</span>
+                </button>
               </div>
 
               <div className="tabs">
@@ -1484,11 +1721,31 @@ export default function AdminConsolePage() {
           {/* SCREEN 6: DRIVERS (35-admin-drivers.png) */}
           {subView === 'drivers' && (
             <div>
-              <div className="page-h">
+              <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1>Drivers</h1>
-                  <p>Saturday driver fleet and vehicle details</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Drivers</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>Saturday driver fleet and vehicle details</p>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowAddDriverModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 22px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    background: '#E0A82E',
+                    color: '#1E293B',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add driver</span>
+                </button>
               </div>
 
               <div className="grid g3">
@@ -3079,6 +3336,465 @@ export default function AdminConsolePage() {
                   }}
                 >
                   Create window
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD USER MODAL */}
+      {showAddUserModal && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddUserModal(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              background: '#ffffff',
+              borderRadius: 16,
+              maxWidth: 500,
+              width: '100%',
+              padding: '28px 32px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0F172A' }}>Add new user</h2>
+              <button
+                type="button"
+                onClick={() => setShowAddUserModal(false)}
+                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 6 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateUser} className="stack" style={{ gap: 16 }}>
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Full Name</span>
+                <input
+                  required
+                  placeholder="e.g. John Doe"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+              </label>
+
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Email Address</span>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. user@buckduck.com"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Phone</span>
+                  <input
+                    type="tel"
+                    placeholder="e.g. (301) 555-0199"
+                    value={newUserPhone}
+                    onChange={(e) => setNewUserPhone(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Role</span>
+                  <select
+                    value={newUserRole}
+                    onChange={(e: any) => setNewUserRole(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, background: '#fff' }}
+                  >
+                    <option value="customer">Customer</option>
+                    <option value="merchant">Merchant</option>
+                    <option value="driver">Driver</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+              </div>
+
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Initial Password</span>
+                <input
+                  type="password"
+                  placeholder="Default: welcome123"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+                <span style={{ fontSize: 12, color: '#64748B' }}>Leave blank to default to &quot;welcome123&quot;</span>
+              </label>
+
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    background: '#0B1527',
+                    color: '#ffffff',
+                    padding: '12px 28px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Create user
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD STORE MODAL */}
+      {showAddStoreModal && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddStoreModal(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              background: '#ffffff',
+              borderRadius: 16,
+              maxWidth: 580,
+              width: '100%',
+              padding: '28px 32px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0F172A' }}>Add new store</h2>
+              <button
+                type="button"
+                onClick={() => setShowAddStoreModal(false)}
+                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 6 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStore} className="stack" style={{ gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Store Name</span>
+                  <input
+                    required
+                    placeholder="e.g. Accra Market & Bakery"
+                    value={newStoreName}
+                    onChange={(e) => setNewStoreName(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Category</span>
+                  <select
+                    value={newStoreCategory}
+                    onChange={(e) => setNewStoreCategory(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, background: '#fff' }}
+                  >
+                    <option value="Groceries">Groceries</option>
+                    <option value="Butcher & Meat">Butcher & Meat</option>
+                    <option value="Bakery">Bakery</option>
+                    <option value="Produce">Produce</option>
+                    <option value="African & Caribbean">African & Caribbean</option>
+                    <option value="Latin American">Latin American</option>
+                    <option value="Halal & Specialty">Halal & Specialty</option>
+                  </select>
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Owner Email (Merchant)</span>
+                  <input
+                    type="email"
+                    placeholder="merchant@buckduck.com"
+                    value={newStoreOwnerEmail}
+                    onChange={(e) => setNewStoreOwnerEmail(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Phone</span>
+                  <input
+                    type="tel"
+                    placeholder="(301) 555-0145"
+                    value={newStorePhone}
+                    onChange={(e) => setNewStorePhone(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+              </div>
+
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Street Address</span>
+                <input
+                  placeholder="e.g. 8412 Georgia Ave"
+                  value={newStoreAddress}
+                  onChange={(e) => setNewStoreAddress(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>City</span>
+                  <input
+                    value={newStoreCity}
+                    onChange={(e) => setNewStoreCity(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>State</span>
+                  <input
+                    value={newStoreState}
+                    onChange={(e) => setNewStoreState(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>ZIP</span>
+                  <input
+                    value={newStoreZip}
+                    onChange={(e) => setNewStoreZip(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Commission Rate</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    value={newStoreCommission}
+                    onChange={(e) => setNewStoreCommission(parseFloat(e.target.value))}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                  <span style={{ fontSize: 12, color: '#64748B' }}>0.15 = 15%</span>
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Status</span>
+                  <select
+                    value={newStoreStatus}
+                    onChange={(e) => setNewStoreStatus(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, background: '#fff' }}
+                  >
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending Review</option>
+                  </select>
+                </label>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    background: '#0B1527',
+                    color: '#ffffff',
+                    padding: '12px 28px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Create store
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD DRIVER MODAL */}
+      {showAddDriverModal && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddDriverModal(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              background: '#ffffff',
+              borderRadius: 16,
+              maxWidth: 500,
+              width: '100%',
+              padding: '28px 32px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0F172A' }}>Add new driver</h2>
+              <button
+                type="button"
+                onClick={() => setShowAddDriverModal(false)}
+                style={{ background: 'none', border: 'none', color: '#64748B', cursor: 'pointer', padding: 6 }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateDriver} className="stack" style={{ gap: 16 }}>
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Driver Full Name</span>
+                <input
+                  required
+                  placeholder="e.g. Kwame Asante"
+                  value={newDriverName}
+                  onChange={(e) => setNewDriverName(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+              </label>
+
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Driver Email</span>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. kwame@buckduck.com"
+                  value={newDriverEmail}
+                  onChange={(e) => setNewDriverEmail(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Phone</span>
+                  <input
+                    type="tel"
+                    placeholder="(301) 555-0102"
+                    value={newDriverPhone}
+                    onChange={(e) => setNewDriverPhone(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Vehicle Information</span>
+                  <input
+                    placeholder="Toyota Sienna · Silver"
+                    value={newDriverVehicle}
+                    onChange={(e) => setNewDriverVehicle(e.target.value)}
+                    className="input"
+                    style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                  />
+                </label>
+              </div>
+
+              <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Initial Password</span>
+                <input
+                  type="password"
+                  placeholder="Default: welcome123"
+                  value={newDriverPassword}
+                  onChange={(e) => setNewDriverPassword(e.target.value)}
+                  className="input"
+                  style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                />
+                <span style={{ fontSize: 12, color: '#64748B' }}>Driver can change password upon initial login</span>
+              </label>
+
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    background: '#0B1527',
+                    color: '#ffffff',
+                    padding: '12px 28px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Register driver
                 </button>
               </div>
             </form>

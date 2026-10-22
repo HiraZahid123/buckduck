@@ -17,7 +17,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<User>;
   demoLogin: (role: 'customer' | 'merchant' | 'driver' | 'admin') => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
@@ -37,6 +37,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
+        // Verify token in background
+        fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${savedToken}` },
+        })
+          .then((res) => {
+            if (res.ok) return res.json();
+            if (res.status === 401) {
+              logout();
+            }
+          })
+          .then((freshUser) => {
+            if (freshUser) {
+              setUser(freshUser);
+              localStorage.setItem('bd_user', JSON.stringify(freshUser));
+            }
+          })
+          .catch(() => {});
       }
     } catch {
       // storage unavailable
@@ -60,22 +77,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(data.user);
     localStorage.setItem('bd_token', data.token);
     localStorage.setItem('bd_user', JSON.stringify(data.user));
+    return data.user as User;
   };
 
   const demoLogin = async (role: 'customer' | 'merchant' | 'driver' | 'admin') => {
-    const res = await fetch('/api/auth/demo-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role }),
-    });
-    if (!res.ok) {
-      throw new Error(`Demo login for ${role} failed`);
+    try {
+      const res = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        console.warn(`Demo login for ${role} not available`);
+        return;
+      }
+      const data = await res.json();
+      setToken(data.token);
+      setUser(data.user);
+      localStorage.setItem('bd_token', data.token);
+      localStorage.setItem('bd_user', JSON.stringify(data.user));
+    } catch (err) {
+      console.warn('Demo login failed', err);
     }
-    const data = await res.json();
-    setToken(data.token);
-    setUser(data.user);
-    localStorage.setItem('bd_token', data.token);
-    localStorage.setItem('bd_user', JSON.stringify(data.user));
   };
 
   const register = async (data: any) => {
