@@ -170,6 +170,51 @@ export default function DriverAppPage() {
     }
   }, []);
 
+  if (!loading && (!user || (user.role !== 'driver' && user.role !== 'admin'))) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', padding: 20 }}>
+        <div className="card" style={{ maxWidth: 460, width: '100%', padding: '36px 32px', borderRadius: 16, textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.08)', background: '#fff' }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>🚚</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 8px', color: '#0F172A' }}>Driver Dispatch App</h2>
+          {user ? (
+            <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 24px', lineHeight: 1.5 }}>
+              You are signed in as <strong>{user.name}</strong> (<span style={{ textTransform: 'capitalize' }}>{user.role}</span>). A Driver account is required to view Saturday delivery routes and dispatch jobs.
+            </p>
+          ) : (
+            <p style={{ color: '#64748B', fontSize: 14, margin: '0 0 24px' }}>
+              Please sign in with your Driver account to view routes, accept delivery jobs and track earnings.
+            </p>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Link
+              href="/"
+              className="btn btn-outline"
+              style={{ padding: '11px 24px', borderRadius: 999, fontWeight: 600, textDecoration: 'none' }}
+            >
+              Return to Marketplace →
+            </Link>
+            <Link
+              href="/login"
+              className="btn btn-primary"
+              style={{
+                padding: '12px 24px',
+                borderRadius: 999,
+                fontWeight: 700,
+                textDecoration: 'none',
+                background: '#0B1527',
+                color: '#fff',
+                textAlign: 'center',
+              }}
+            >
+              Sign In to Driver Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Top Preview Mode Switcher (Desktop utility) */}
