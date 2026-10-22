@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventsGateway: EventsGateway,
+  ) {}
 
   async getOverview() {
     const orders = await this.prisma.orders.findMany({
@@ -363,5 +367,45 @@ export class AdminService {
       ...data,
       role: 'driver',
     });
+  }
+
+  async deleteUser(userId: number) {
+    try {
+      return await this.prisma.users.delete({
+        where: { id: Number(userId) },
+      });
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new BadRequestException('Cannot permanently delete this user because they have associated orders, deliveries, or store listings. Toggle their status to "Suspended" instead to deactivate their access.');
+      }
+      throw e;
+    }
+  }
+
+  async deleteStore(storeId: number) {
+    try {
+      // Clean up standalone store products first if no foreign key blocks them
+      await this.prisma.products.deleteMany({
+        where: { store_id: Number(storeId) },
+      }).catch(() => {});
+
+      return await this.prisma.stores.delete({
+        where: { id: Number(storeId) },
+      });
+    } catch (e: any) {
+      if (e.code === 'P2003') {
+        throw new BadRequestException('Cannot permanently delete this store because it has existing orders or active settlements. Toggle the store to "Suspended" or "Inactive" instead.');
+      }
+      throw e;
+    }
+  }
+
+  async toggleDriverOnline(driverId: number, online: boolean) {
+    const updated = await this.prisma.users.update({
+      where: { id: Number(driverId) },
+      data: { driver_online: Boolean(online), updated_at: new Date() },
+    });
+    this.eventsGateway.emitDriverStatus(updated.id, updated.driver_online, updated.name);
+    return updated;
   }
 }

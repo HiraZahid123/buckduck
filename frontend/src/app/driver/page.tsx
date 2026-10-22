@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
+import { getSocket } from '../../lib/socket';
 
 export default function DriverAppPage() {
   const router = useRouter();
   const { user, demoLogin, logout } = useAuth();
   const [subView, setSubView] = useState<'home' | 'available' | 'route' | 'earnings'>('home');
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(user?.driver_online ?? true);
   const [jobBoard, setJobBoard] = useState<any[]>([]);
   const [activeRoute, setActiveRoute] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any>(null);
@@ -62,22 +63,56 @@ export default function DriverAppPage() {
   };
 
   useEffect(() => {
+    if (user && user.driver_online !== undefined) {
+      setIsOnline(Boolean(user.driver_online));
+    }
     loadDriverData();
     const interval = setInterval(loadDriverData, 15000);
     return () => clearInterval(interval);
   }, [user]);
 
+  // Real-time WebSocket connection to receive live fleet updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleDriverStatus = (data: { driverId: number; online: boolean }) => {
+      if (user && data.driverId === user.id) {
+        setIsOnline(Boolean(data.online));
+      }
+    };
+
+    socket.on('driver:status', handleDriverStatus);
+
+    return () => {
+      socket.off('driver:status', handleDriverStatus);
+    };
+  }, [user]);
+
   const toggleOnline = async () => {
+    const nextOnline = !isOnline;
+    setIsOnline(nextOnline);
     const token = localStorage.getItem('bd_token');
+
     try {
+      // Emit via Socket.IO immediately
+      const socket = getSocket();
+      socket.emit('driver:toggle_online', {
+        driverId: user?.id,
+        online: nextOnline,
+        name: user?.name,
+      });
+
       const res = await fetch('/api/driver/toggle-online', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ online: !isOnline }),
+        body: JSON.stringify({ online: nextOnline }),
       });
-      if (res.ok) setIsOnline(!isOnline);
+      if (!res.ok) {
+        // Reload fresh state if failed
+        await loadDriverData();
+      }
     } catch {
-      setIsOnline(!isOnline);
+      // Retain optimistic state
     }
   };
 

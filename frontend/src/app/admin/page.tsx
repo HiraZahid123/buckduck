@@ -23,7 +23,12 @@ import {
   Trash2,
   Plus,
   RefreshCw,
+  Power,
+  Ban,
+  CheckCircle2,
+  Radio,
 } from 'lucide-react';
+import { getSocket } from '../../lib/socket';
 
 export interface ServiceZip {
   zip: string;
@@ -162,6 +167,40 @@ export default function AdminConsolePage() {
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Real-time WebSocket connection for live driver online/offline & order updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleDriverStatus = (data: { driverId: number; online: boolean; name?: string }) => {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === data.driverId ? { ...u, driver_online: data.online } : u
+        )
+      );
+      setDispatch((prev: any) => {
+        if (!prev || !prev.drivers) return prev;
+        return {
+          ...prev,
+          drivers: prev.drivers.map((d: any) =>
+            d.id === data.driverId ? { ...d, driver_online: data.online } : d
+          ),
+        };
+      });
+    };
+
+    const handleOrderStatus = () => {
+      loadData();
+    };
+
+    socket.on('driver:status', handleDriverStatus);
+    socket.on('order:status', handleOrderStatus);
+
+    return () => {
+      socket.off('driver:status', handleDriverStatus);
+      socket.off('order:status', handleOrderStatus);
+    };
+  }, []);
 
   // Synchronize ZIP codes from backend settings
   useEffect(() => {
@@ -521,6 +560,115 @@ export default function AdminConsolePage() {
       }
     } catch {
       alert('Error registering driver');
+    }
+  };
+
+  // Toggle user status between active and suspended (prevents login immediately)
+  const handleToggleUserStatus = async (userId: number, currentStatus: string) => {
+    const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    const token = localStorage.getItem('bd_token');
+    try {
+      // Optimistic update
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: nextStatus } : u))
+      );
+      const res = await fetch(`/api/admin/users/${userId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Failed to update user status');
+        await loadData();
+      }
+    } catch {
+      alert('Error updating user status');
+      await loadData();
+    }
+  };
+
+  // Permanently delete user
+  const handleDeleteUser = async (userId: number, userName: string) => {
+    if (!confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setUsers((prev) => prev.filter((u) => u.id !== userId));
+        alert(`User "${userName}" has been deleted.`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Could not delete user.');
+      }
+    } catch {
+      alert('Error deleting user');
+    }
+  };
+
+  // Permanently delete store
+  const handleDeleteStore = async (storeId: number, storeName: string) => {
+    if (!confirm(`Are you sure you want to delete store "${storeName}"? This action cannot be undone.`)) {
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch(`/api/admin/stores/${storeId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setStores((prev) => prev.filter((s) => s.id !== storeId));
+        alert(`Store "${storeName}" has been deleted.`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Could not delete store.');
+      }
+    } catch {
+      alert('Error deleting store');
+    }
+  };
+
+  // Real-time toggle driver online/offline via Socket + API
+  const handleToggleDriverOnline = async (driverId: number, currentOnline: boolean) => {
+    const nextOnline = !currentOnline;
+    const token = localStorage.getItem('bd_token');
+    try {
+      // Optimistic update locally
+      setUsers((prev) =>
+        prev.map((u) => (u.id === driverId ? { ...u, driver_online: nextOnline } : u))
+      );
+      if (dispatch?.drivers) {
+        setDispatch((prev: any) => ({
+          ...prev,
+          drivers: prev.drivers.map((d: any) =>
+            d.id === driverId ? { ...d, driver_online: nextOnline } : d
+          ),
+        }));
+      }
+
+      // Also emit via websocket client directly
+      const socket = getSocket();
+      socket.emit('driver:toggle_online', { driverId, online: nextOnline });
+
+      const res = await fetch(`/api/admin/drivers/${driverId}/online`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ online: nextOnline }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Failed to toggle driver online status');
+        await loadData();
+      }
+    } catch {
+      alert('Error toggling driver status');
+      await loadData();
     }
   };
 
@@ -1253,106 +1401,116 @@ export default function AdminConsolePage() {
 
                 {/* Drivers Fleet (Screenshot 4) */}
                 <div className="card" style={{ padding: 20 }}>
-                  <div className="card-h" style={{ marginBottom: 16 }}>
-                    <h3 style={{ margin: 0, fontSize: 18 }}>Drivers</h3>
+                  <div className="card-h" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <h3 style={{ margin: 0, fontSize: 18 }}>Fleet Drivers</h3>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 5,
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          background: 'rgba(34, 197, 94, 0.12)',
+                          color: '#15803D',
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}
+                      >
+                        <Radio size={11} />
+                        <span>Live Sync</span>
+                      </span>
+                    </div>
+                    <span className="tiny muted">Click badge to toggle online</span>
                   </div>
 
                   <div className="stack" style={{ gap: 14 }}>
-                    {[
-                      {
-                        initials: 'BS',
-                        name: 'Brianna Scott',
-                        vehicle: 'Honda CR-V · Blue',
-                        isOnline: true,
-                        stops: 0,
-                      },
-                      {
-                        initials: 'KA',
-                        name: 'Kwame Asante',
-                        vehicle: 'Toyota Sienna · Silver',
-                        isOnline: true,
-                        stops: 3,
-                      },
-                      {
-                        initials: 'LR',
-                        name: 'Luis Ramirez',
-                        vehicle: 'Ford Transit · White',
-                        isOnline: true,
-                        stops: 0,
-                      },
-                      {
-                        initials: 'EN',
-                        name: 'Emeka Nwosu',
-                        vehicle: 'Chevy Express · White',
-                        isOnline: false,
-                        stops: 0,
-                      },
-                      {
-                        initials: 'HL',
-                        name: 'Hannah Lee',
-                        vehicle: 'Kia Carnival · Gray',
-                        isOnline: false,
-                        stops: 0,
-                      },
-                    ].map((driver, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: '50%',
-                              background: '#F7E08B',
-                              color: '#0B1F4B',
-                              fontWeight: 800,
-                              fontSize: 14,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flex: 'none',
-                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
-                            }}
-                          >
-                            {driver.initials}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
-                              {driver.name}
+                    {(users.filter((u) => u.role === 'driver').length > 0
+                      ? users.filter((u) => u.role === 'driver')
+                      : (dispatch?.drivers || [])
+                    ).map((driver: any) => {
+                      const initials = (driver.name || 'Driver')
+                        .split(' ')
+                        .map((p: string) => p[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+                      const isOnline = Boolean(driver.driver_online);
+                      return (
+                        <div
+                          key={driver.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 12,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: '#F7E08B',
+                                color: '#0B1F4B',
+                                fontWeight: 800,
+                                fontSize: 14,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flex: 'none',
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                              }}
+                            >
+                              {initials}
                             </div>
-                            <div className="tiny muted">{driver.vehicle}</div>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
+                                {driver.name}
+                              </div>
+                              <div className="tiny muted">{driver.vehicle || 'Standard Delivery Vehicle'}</div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleDriverOnline(driver.id, isOnline)}
+                              title="Click to toggle live online/offline status via WebSocket"
+                              style={{
+                                background: isOnline ? '#DCFCE7' : '#F1F5F9',
+                                color: isOnline ? '#15803D' : '#475569',
+                                padding: '4px 10px',
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: isOnline ? '0 0 6px rgba(34, 197, 94, 0.4)' : 'none',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 7,
+                                  height: 7,
+                                  borderRadius: '50%',
+                                  background: isOnline ? '#15803D' : '#94A3B8',
+                                }}
+                              />
+                              <span>{isOnline ? 'Online' : 'Offline'}</span>
+                            </button>
+                            <span className="small muted" style={{ minWidth: 48, textAlign: 'right' }}>
+                              {driver.stops || 0} stops
+                            </span>
                           </div>
                         </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span
-                            style={{
-                              background: driver.isOnline ? '#DCFCE7' : '#F1F5F9',
-                              color: driver.isOnline ? '#15803D' : '#475569',
-                              padding: '3px 10px',
-                              borderRadius: 20,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                            }}
-                          >
-                            ● {driver.isOnline ? 'Online' : 'Offline'}
-                          </span>
-                          <span className="small muted" style={{ minWidth: 48, textAlign: 'right' }}>
-                            {driver.stops} stops
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1636,20 +1794,68 @@ export default function AdminConsolePage() {
                             />%
                           </td>
                           <td>
-                            <span className={`badge ${s.status === 'active' ? 'b-green' : 'b-amber'}`}>
-                              {s.status}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStore(s.id, s.status === 'active' ? 'suspended' : 'active')}
+                              title={`Click to toggle store status (currently ${s.status})`}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '4px 10px',
+                                borderRadius: 999,
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                background: s.status === 'active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: s.status === 'active' ? '#16A34A' : '#DC2626',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 7,
+                                  height: 7,
+                                  borderRadius: '50%',
+                                  background: s.status === 'active' ? '#16A34A' : '#DC2626',
+                                }}
+                              />
+                              <span style={{ textTransform: 'capitalize' }}>{s.status}</span>
+                            </button>
                           </td>
                           <td>
-                            {s.status === 'pending' ? (
-                              <button className="btn btn-success btn-sm" onClick={() => handleUpdateStore(s.id, 'active')}>
-                                Approve
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {s.status === 'pending' ? (
+                                <button className="btn btn-success btn-sm" onClick={() => handleUpdateStore(s.id, 'active')}>
+                                  Approve
+                                </button>
+                              ) : (
+                                <button
+                                  className={`btn btn-sm ${s.status === 'active' ? 'btn-danger' : 'btn-success'}`}
+                                  onClick={() => handleUpdateStore(s.id, s.status === 'active' ? 'suspended' : 'active')}
+                                >
+                                  {s.status === 'active' ? 'Suspend' : 'Activate'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteStore(s.id, s.name)}
+                                title="Delete store"
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: 6,
+                                  border: '1px solid #FCA5A5',
+                                  background: '#FEF2F2',
+                                  color: '#DC2626',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Trash2 size={14} />
                               </button>
-                            ) : (
-                              <button className="btn btn-danger btn-sm" onClick={() => handleUpdateStore(s.id, 'suspended')}>
-                                Suspend
-                              </button>
-                            )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1718,6 +1924,7 @@ export default function AdminConsolePage() {
                         <th>Role</th>
                         <th>Phone</th>
                         <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1732,9 +1939,64 @@ export default function AdminConsolePage() {
                           </td>
                           <td className="small">{u.phone || '—'}</td>
                           <td>
-                            <span className={`badge ${u.status === 'active' ? 'b-green' : 'b-gray'}`}>
-                              {u.status}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUserStatus(u.id, u.status || 'active')}
+                              title={`Click to toggle status (currently ${u.status || 'active'})`}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '4px 10px',
+                                borderRadius: 999,
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                fontWeight: 700,
+                                background: u.status === 'active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: u.status === 'active' ? '#16A34A' : '#DC2626',
+                                transition: 'all 0.15s ease',
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 7,
+                                  height: 7,
+                                  borderRadius: '50%',
+                                  background: u.status === 'active' ? '#16A34A' : '#DC2626',
+                                }}
+                              />
+                              <span style={{ textTransform: 'capitalize' }}>{u.status || 'active'}</span>
+                            </button>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <button
+                                type="button"
+                                className={`btn btn-sm ${u.status === 'active' ? 'btn-danger' : 'btn-success'}`}
+                                onClick={() => handleToggleUserStatus(u.id, u.status || 'active')}
+                                style={{ padding: '4px 10px', fontSize: 12 }}
+                              >
+                                {u.status === 'active' ? 'Suspend' : 'Activate'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u.id, u.name)}
+                                title="Delete user"
+                                style={{
+                                  padding: '5px 8px',
+                                  borderRadius: 6,
+                                  border: '1px solid #FCA5A5',
+                                  background: '#FEF2F2',
+                                  color: '#DC2626',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1750,8 +2012,26 @@ export default function AdminConsolePage() {
             <div>
               <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1 style={{ margin: 0, fontSize: 28 }}>Drivers</h1>
-                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>Saturday driver fleet and vehicle details</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <h1 style={{ margin: 0, fontSize: 28 }}>Drivers</h1>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 10px',
+                        borderRadius: 999,
+                        background: 'rgba(34, 197, 94, 0.12)',
+                        color: '#15803D',
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
+                    >
+                      <Radio size={13} />
+                      <span>WebSocket Live Sync</span>
+                    </span>
+                  </div>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>Saturday driver fleet, vehicle assignments, and real-time dispatch availability</p>
                 </div>
                 <button
                   type="button"
@@ -1777,17 +2057,98 @@ export default function AdminConsolePage() {
 
               <div className="grid g3">
                 {users.filter((u) => u.role === 'driver').map((d) => (
-                  <div key={d.id} className="card">
-                    <div className="row between">
-                      <div className="avatar-sm">{d.name.charAt(0)}</div>
-                      <span className={`badge ${d.driver_online ? 'b-green' : 'b-gray'}`}>
-                        {d.driver_online ? 'Online' : 'Offline'}
-                      </span>
+                  <div key={d.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div className="row between" style={{ alignItems: 'flex-start' }}>
+                        <div className="avatar-sm" style={{ fontWeight: 800, fontSize: 15 }}>{d.name.charAt(0)}</div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {/* Live socket online toggle badge */}
+                          <button
+                            type="button"
+                            onClick={() => handleToggleDriverOnline(d.id, Boolean(d.driver_online))}
+                            title="Click to toggle live online/offline status (broadcasts via WebSocket)"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '4px 10px',
+                              borderRadius: 999,
+                              border: 'none',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              fontWeight: 700,
+                              background: d.driver_online ? 'rgba(34, 197, 94, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                              color: d.driver_online ? '#16A34A' : '#64748B',
+                              boxShadow: d.driver_online ? '0 0 8px rgba(34, 197, 94, 0.35)' : 'none',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                background: d.driver_online ? '#16A34A' : '#94A3B8',
+                                display: 'inline-block',
+                              }}
+                            />
+                            <span>{d.driver_online ? 'Online' : 'Offline'}</span>
+                          </button>
+
+                          {/* Account status badge */}
+                          <span
+                            className={`badge ${d.status === 'active' ? 'b-green' : 'b-amber'}`}
+                            style={{ fontSize: 11, textTransform: 'capitalize' }}
+                          >
+                            {d.status || 'active'}
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 14 }}>
+                        <strong style={{ fontSize: 16 }}>{d.name}</strong>
+                        <div className="tiny muted">{d.vehicle || 'Toyota Sienna · Silver'}</div>
+                        <div className="small" style={{ marginTop: 8 }}>📞 {d.phone || '(301) 555-0102'}</div>
+                        <div className="tiny muted" style={{ marginTop: 2 }}>✉️ {d.email}</div>
+                      </div>
                     </div>
-                    <div style={{ marginTop: 12 }}>
-                      <strong style={{ fontSize: 16 }}>{d.name}</strong>
-                      <div className="tiny muted">{d.vehicle || 'Toyota Sienna · Silver'}</div>
-                      <div className="small" style={{ marginTop: 8 }}>📞 {d.phone || '(301) 555-0102'}</div>
+
+                    <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${d.driver_online ? 'btn-ghost' : 'btn-success'}`}
+                        onClick={() => handleToggleDriverOnline(d.id, Boolean(d.driver_online))}
+                        style={{ flex: 1, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        title="Broadcast online status update via WebSocket"
+                      >
+                        <Power size={13} />
+                        <span>{d.driver_online ? 'Set Offline' : 'Set Online'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${d.status === 'active' ? 'btn-danger' : 'btn-secondary'}`}
+                        onClick={() => handleToggleUserStatus(d.id, d.status || 'active')}
+                        style={{ fontSize: 12 }}
+                        title={d.status === 'active' ? 'Suspend driver account login' : 'Activate driver account login'}
+                      >
+                        {d.status === 'active' ? 'Suspend' : 'Activate'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUser(d.id, d.name)}
+                        title="Delete driver"
+                        style={{
+                          padding: '6px 8px',
+                          borderRadius: 6,
+                          border: '1px solid #FCA5A5',
+                          background: '#FEF2F2',
+                          color: '#DC2626',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -51,6 +51,11 @@ export class AdminController {
     return this.adminService.updateStore(Number(id), body);
   }
 
+  @Delete('stores/:id')
+  async deleteStore(@Param('id') id: string) {
+    return this.adminService.deleteStore(Number(id));
+  }
+
   @Get('users')
   async getAllUsers() {
     return this.adminService.getAllUsers();
@@ -61,6 +66,11 @@ export class AdminController {
     return this.adminService.createUser(body);
   }
 
+  @Delete('users/:id')
+  async deleteUser(@Param('id') id: string) {
+    return this.adminService.deleteUser(Number(id));
+  }
+
   @Post('stores')
   async createStore(@Body() body: any) {
     return this.adminService.createStore(body);
@@ -69,6 +79,11 @@ export class AdminController {
   @Post('drivers')
   async createDriver(@Body() body: any) {
     return this.adminService.createDriver(body);
+  }
+
+  @Put('drivers/:id/online')
+  async toggleDriverOnline(@Param('id') id: string, @Body() body: { online: boolean }) {
+    return this.adminService.toggleDriverOnline(Number(id), body.online);
   }
 
   @Put('users/:id/status')

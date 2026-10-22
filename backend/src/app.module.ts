@@ -9,6 +9,7 @@ import { MerchantModule } from './merchant/merchant.module';
 import { DriverModule } from './driver/driver.module';
 import { AdminModule } from './admin/admin.module';
 import { SettingsModule } from './settings/settings.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { SettingsModule } from './settings/settings.module';
     DriverModule,
     AdminModule,
     SettingsModule,
+    EventsModule,
   ],
 })
 export class AppModule {}

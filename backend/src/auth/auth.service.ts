@@ -42,6 +42,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.status === 'suspended' || user.status === 'inactive') {
+      throw new UnauthorizedException('Your account has been suspended by administration. Please contact support.');
+    }
+
     const { password_hash, ...result } = user;
     return result;
   }
@@ -121,6 +125,9 @@ export class AuthService {
     });
 
     if (!user) throw new UnauthorizedException();
+    if (user.status === 'suspended' || user.status === 'inactive') {
+      throw new UnauthorizedException('Account suspended');
+    }
     const { password_hash, ...rest } = user;
     return {
       ...rest,

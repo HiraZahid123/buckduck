@@ -1,16 +1,22 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class DriverService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventsGateway: EventsGateway,
+  ) {}
 
   async toggleOnline(driverId: number, isOnline: boolean) {
-    return this.prisma.users.update({
+    const updated = await this.prisma.users.update({
       where: { id: driverId },
       data: { driver_online: Boolean(isOnline), updated_at: new Date() },
       select: { id: true, name: true, driver_online: true },
     });
+    this.eventsGateway.emitDriverStatus(updated.id, updated.driver_online, updated.name);
+    return updated;
   }
 
   async getJobBoard(driverId: number) {
