@@ -38,5 +38,9 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts.bak
 
+# Expo
+.expo/
+*/.expo/
+
 # Temporary Office lock files
 ~$*
