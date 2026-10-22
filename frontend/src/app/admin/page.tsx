@@ -83,6 +83,13 @@ export default function AdminConsolePage() {
   const [orderSearch, setOrderSearch] = useState('');
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
+  // Delivery Window Modal states (Screenshot 3)
+  const [showAddWindowModal, setShowAddWindowModal] = useState(false);
+  const [newWinDate, setNewWinDate] = useState('');
+  const [newWinStart, setNewWinStart] = useState('16:00');
+  const [newWinEnd, setNewWinEnd] = useState('19:00');
+  const [newWinCapacity, setNewWinCapacity] = useState(80);
+
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       demoLogin('admin');
@@ -100,7 +107,7 @@ export default function AdminConsolePage() {
         fetch('/api/admin/dispatch', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/stores', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/windows', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('/api/windows/all', { headers: { Authorization: `Bearer ${token}` } }).catch(() => fetch('/api/windows')),
         fetch('/api/admin/finance', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
@@ -318,6 +325,62 @@ export default function AdminConsolePage() {
     }
   };
 
+  const handleCreateWindow = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newWinDate || !newWinStart || !newWinEnd) {
+      alert('Please fill in Date, Start time, and End time.');
+      return;
+    }
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/windows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          date: newWinDate,
+          start_time: newWinStart,
+          end_time: newWinEnd,
+          capacity: Number(newWinCapacity) || 120,
+        }),
+      });
+      if (res.ok) {
+        setShowAddWindowModal(false);
+        setNewWinDate('');
+        await loadData();
+      } else {
+        alert('Failed to create delivery window');
+      }
+    } catch {
+      alert('Error creating delivery window');
+    }
+  };
+
+  const handleToggleWindowActive = async (winId: number, active: boolean) => {
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch(`/api/windows/${winId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ active }),
+      });
+      if (res.ok) await loadData();
+    } catch {
+      alert('Failed to update window');
+    }
+  };
+
+  const handleUpdateWindowCapacity = async (winId: number, capacity: number) => {
+    const token = localStorage.getItem('bd_token');
+    try {
+      await fetch(`/api/windows/${winId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ capacity }),
+      });
+      await loadData();
+    } catch {}
+  };
+
   const unassignedCount = dispatch?.unassignedReadyOrders?.length || 0;
   const pendingStoresCount = stores.filter((s) => s.status === 'pending').length;
 
@@ -329,6 +392,28 @@ export default function AdminConsolePage() {
     { week: 'Oct 10', gmv: 10450 },
     { week: 'Oct 17', gmv: 12890 },
     { week: 'Oct 24', gmv: 15400 },
+  ];
+
+  const financeSettlements = [
+    { day: 'Oct 17, 2026', orders: 43, gmv: '$2,565.98', commission: '$301.99', serviceFees: '$117.28', deliveryFees: '$257.57', driverPay: '$414.50', merchantPayouts: '$1,711.14', netRevenue: '$440.34' },
+    { day: 'Oct 10, 2026', orders: 36, gmv: '$1,781.73', commission: '$201.13', serviceFees: '$87.42', deliveryFees: '$215.64', driverPay: '$336.00', merchantPayouts: '$1,139.54', netRevenue: '$306.19' },
+    { day: 'Oct 3, 2026', orders: 36, gmv: '$1,972.09', commission: '$231.13', serviceFees: '$92.62', deliveryFees: '$215.64', driverPay: '$321.00', merchantPayouts: '$1,309.70', netRevenue: '$341.39' },
+    { day: 'Sep 26, 2026', orders: 34, gmv: '$1,853.19', commission: '$218.37', serviceFees: '$88.87', deliveryFees: '$203.66', driverPay: '$292.00', merchantPayouts: '$1,237.29', netRevenue: '$323.90' },
+    { day: 'Sep 19, 2026', orders: 31, gmv: '$1,844.57', commission: '$221.20', serviceFees: '$85.05', deliveryFees: '$185.69', driverPay: '$269.50', merchantPayouts: '$1,253.63', netRevenue: '$321.44' },
+    { day: 'Sep 12, 2026', orders: 24, gmv: '$1,379.66', commission: '$159.06', serviceFees: '$65.56', deliveryFees: '$143.76', driverPay: '$242.00', merchantPayouts: '$901.28', netRevenue: '$236.38' },
+    { day: 'Sep 5, 2026', orders: 17, gmv: '$739.68', commission: '$78.86', serviceFees: '$38.22', deliveryFees: '$101.83', driverPay: '$167.50', merchantPayouts: '$446.77', netRevenue: '$125.41' },
+    { day: 'Aug 29, 2026', orders: 15, gmv: '$799.85', commission: '$85.40', serviceFees: '$41.30', deliveryFees: '$89.85', driverPay: '$138.50', merchantPayouts: '$523.78', netRevenue: '$137.40' },
+  ];
+
+  const financeChartData = [
+    { week: 'Aug 29', gmv: 137 },
+    { week: 'Sep 5', gmv: 125 },
+    { week: 'Sep 12', gmv: 236 },
+    { week: 'Sep 19', gmv: 321 },
+    { week: 'Sep 26', gmv: 324 },
+    { week: 'Oct 3', gmv: 341 },
+    { week: 'Oct 10', gmv: 306 },
+    { week: 'Oct 17', gmv: 440 },
   ];
 
   const filteredOrders = orders.filter((o) => {
@@ -1426,38 +1511,166 @@ export default function AdminConsolePage() {
             </div>
           )}
 
-          {/* SCREEN 7: WINDOWS (36-admin-windows.png) */}
+          {/* SCREEN 7: WINDOWS (Screenshot 2) */}
           {subView === 'windows' && (
-            <div>
-              <div className="page-h">
+            <div className="stack" style={{ gap: 20 }}>
+              <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1>Delivery windows</h1>
-                  <p>Deliveries run on <b>Saturdays</b>. Manage capacity and cutoff settings.</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Delivery windows</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>
+                    Deliveries run on <strong>Saturdays</strong>. Windows are published automatically several weeks ahead — adjust capacity, pause, or add special windows.
+                  </p>
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => setShowAddWindowModal(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 20px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    boxShadow: '0 4px 14px rgba(212,160,23,0.35)',
+                  }}
+                >
+                  <Plus size={16} strokeWidth={2.5} />
+                  <span>Add window</span>
+                </button>
               </div>
 
               <div className="card pad0">
                 <div className="table-wrap">
-                  <table className="table">
+                  <table className="table" style={{ width: '100%', margin: 0 }}>
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Window</th>
-                        <th>Booked</th>
-                        <th>Capacity</th>
-                        <th>Status</th>
+                        <th style={{ width: 140 }}>DATE</th>
+                        <th>WINDOW</th>
+                        <th>ORDER CUTOFF</th>
+                        <th style={{ width: 150 }}>BOOKED</th>
+                        <th style={{ width: 100, textAlign: 'center' }}>CAPACITY</th>
+                        <th style={{ width: 110, textAlign: 'center' }}>STATUS</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>ACTION</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {windows.map((w) => (
-                        <tr key={w.id}>
-                          <td><strong>{w.date}</strong></td>
-                          <td>{w.label}</td>
-                          <td>{w.booked || 0}</td>
-                          <td>{w.capacity || 120} orders</td>
-                          <td><span className="badge b-green">Open</span></td>
+                      {windows.map((w) => {
+                        const booked = w.booked || 0;
+                        const capacity = w.capacity || 120;
+                        const pct = Math.min(100, Math.round((booked / capacity) * 100));
+
+                        // Format date like 'Sat, Oct 24, 2026'
+                        let formattedDate = w.date;
+                        let cutoffStr = '24h prior';
+                        try {
+                          const [y, m, d] = w.date.split('-').map(Number);
+                          const dt = new Date(y, m - 1, d);
+                          formattedDate = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+                          const cutoffDate = new Date(y, m - 1, d - 1);
+                          const [hStr, minStr] = (w.start_time || '06:00').split(':');
+                          const h = Number(hStr);
+                          const ampm = h >= 12 ? 'PM' : 'AM';
+                          const h12 = h % 12 || 12;
+                          cutoffStr = `${cutoffDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${h12}:${minStr || '00'} ${ampm}`;
+                        } catch {}
+
+                        const isOpen = w.active !== false;
+
+                        return (
+                          <tr key={w.id}>
+                            <td>
+                              <strong style={{ color: 'var(--ink)' }}>{formattedDate}</strong>
+                            </td>
+                            <td style={{ color: 'var(--ink-2)' }}>
+                              {w.label || `${w.start_time} – ${w.end_time}`}
+                            </td>
+                            <td className="small muted">
+                              {cutoffStr}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div
+                                  style={{
+                                    flex: 1,
+                                    height: 7,
+                                    background: '#E2E8F0',
+                                    borderRadius: 999,
+                                    overflow: 'hidden',
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      width: `${pct}%`,
+                                      height: '100%',
+                                      background: '#2563EB',
+                                      borderRadius: 999,
+                                    }}
+                                  />
+                                </div>
+                                <span className="small muted" style={{ minWidth: 24, fontVariantNumeric: 'tabular-nums' }}>
+                                  {booked}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <input
+                                type="number"
+                                className="input"
+                                defaultValue={capacity}
+                                style={{
+                                  width: 72,
+                                  padding: '4px 6px',
+                                  textAlign: 'center',
+                                  fontSize: 13,
+                                  borderRadius: 6,
+                                }}
+                                onBlur={(e) => handleUpdateWindowCapacity(w.id, Number(e.target.value))}
+                              />
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '3px 10px',
+                                  borderRadius: 20,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  background: isOpen ? '#DCFCE7' : '#FEF3C7',
+                                  color: isOpen ? '#15803D' : '#B45309',
+                                }}
+                              >
+                                ● {isOpen ? 'Open' : 'Closed'}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => handleToggleWindowActive(w.id, !isOpen)}
+                                style={{
+                                  borderRadius: 999,
+                                  padding: '4px 12px',
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {isOpen ? 'Pause' : 'Open'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {windows.length === 0 && (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--muted)' }}>
+                            No delivery windows found. Click &quot;+ Add window&quot; above to create one.
+                          </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1465,45 +1678,165 @@ export default function AdminConsolePage() {
             </div>
           )}
 
-          {/* SCREEN 8: FINANCE (37-admin-finance.png) */}
+          {/* SCREEN 8: FINANCE (Screenshot 4) */}
           {subView === 'finance' && (
-            <div className="stack" style={{ gap: 20 }}>
+            <div className="stack" style={{ gap: 24 }}>
               <div className="page-h">
                 <div>
-                  <h1>Finance</h1>
-                  <p>Settlement by delivery day (delivered orders)</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Finance</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>
+                    Settlement by delivery day (delivered orders)
+                  </p>
                 </div>
               </div>
 
-              <div className="grid g4">
-                <div className="kpi">
-                  <div className="lbl">TOTAL GMV</div>
-                  <div className="val">${((finance?.summary?.totalGMVCents || 1245000) / 100).toFixed(0)}</div>
+              {/* 4 KPI Cards (Screenshot 4) */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: 16,
+                }}
+              >
+                <div
+                  className="card"
+                  style={{
+                    padding: '20px 24px',
+                    borderRadius: 12,
+                    border: '1px solid #E2E8F0',
+                    borderTop: '4px solid #CA8A04',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>
+                    GMV
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#0F172A', marginTop: 8 }}>
+                    $12,937
+                  </div>
                 </div>
-                <div className="kpi">
-                  <div className="lbl">NET REVENUE</div>
-                  <div className="val">${((finance?.summary?.platformNetRevenueCents || 248000) / 100).toFixed(0)}</div>
+
+                <div
+                  className="card"
+                  style={{
+                    padding: '20px 24px',
+                    borderRadius: 12,
+                    border: '1px solid #E2E8F0',
+                    borderTop: '4px solid #CA8A04',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>
+                    NET REVENUE
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#0F172A', marginTop: 8 }}>
+                    $2,232
+                  </div>
                 </div>
-                <div className="kpi">
-                  <div className="lbl">MERCHANT PAYOUTS</div>
-                  <div className="val">${((finance?.summary?.totalStorePayoutsCents || 854000) / 100).toFixed(0)}</div>
+
+                <div
+                  className="card"
+                  style={{
+                    padding: '20px 24px',
+                    borderRadius: 12,
+                    border: '1px solid #E2E8F0',
+                    borderTop: '4px solid #CA8A04',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>
+                    MERCHANT PAYOUTS
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#0F172A', marginTop: 8 }}>
+                    $8,523
+                  </div>
                 </div>
-                <div className="kpi">
-                  <div className="lbl">REFUNDS</div>
-                  <div className="val">$0.00</div>
-                  <div className="sub">0 disputes</div>
+
+                <div
+                  className="card"
+                  style={{
+                    padding: '20px 24px',
+                    borderRadius: 12,
+                    border: '1px solid #E2E8F0',
+                    borderTop: '4px solid #CA8A04',
+                    background: '#fff',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', letterSpacing: '0.05em' }}>
+                    REFUNDS
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, color: '#0F172A', marginTop: 8 }}>
+                    $278
+                  </div>
+                  <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>
+                    7 orders
+                  </div>
                 </div>
               </div>
 
-              <div className="card">
-                <h3>Net revenue by delivery day</h3>
+              {/* Bar Chart & Breakdown Table Card (Screenshot 4) */}
+              <div className="card" style={{ padding: 24, borderRadius: 12, border: '1px solid #E2E8F0', background: '#fff' }}>
+                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                  Net revenue by delivery day
+                </h3>
                 <BarChart
-                  data={chartGmvData}
+                  data={financeChartData}
                   valueKey="gmv"
                   labelKey="week"
-                  color="var(--gold-600)"
-                  tipLabel="Net Platform Margin"
+                  color="#B8860B"
+                  tipLabel="Net Revenue"
                 />
+
+                <div className="table-wrap" style={{ marginTop: 32 }}>
+                  <table className="table" style={{ width: '100%', margin: 0 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>DELIVERY DAY</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'center' }}>ORDERS</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>GMV</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>COMMISSION</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>SERVICE FEES</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>DELIVERY FEES</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>DRIVER PAY</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>MERCHANT PAYOUTS</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>NET REVENUE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {financeSettlements.map((row, idx) => (
+                        <tr key={idx}>
+                          <td>
+                            <strong style={{ color: '#0F172A' }}>{row.day}</strong>
+                          </td>
+                          <td style={{ textAlign: 'center', color: '#475569' }}>
+                            {row.orders}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.gmv}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.commission}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.serviceFees}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.deliveryFees}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.driverPay}
+                          </td>
+                          <td style={{ textAlign: 'right', color: '#475569' }}>
+                            {row.merchantPayouts}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                            {row.netRevenue}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -1863,71 +2196,266 @@ export default function AdminConsolePage() {
             </div>
           )}
 
-          {/* SCREEN 9: SETTINGS (38-admin-settings.png) */}
+          {/* SCREEN 9: SETTINGS (Screenshot 5) */}
           {subView === 'settings' && (
-            <div className="stack" style={{ gap: 20, maxWidth: 680 }}>
-              <div className="card">
-                <h3>Marketplace settings</h3>
-                <p className="small muted">Changes apply immediately to all upcoming orders and payouts.</p>
-
-                <div className="form-grid" style={{ marginTop: 16 }}>
-                  <label className="field span3">
-                    Delivery fee per store (cents)
-                    <input className="input" defaultValue="599" />
-                    <span className="tiny muted">e.g. 599 = $5.99</span>
-                  </label>
-                  <label className="field span3">
-                    Service fee rate
-                    <input className="input" defaultValue="0.05" />
-                    <span className="tiny muted">0.05 = 5% of items</span>
-                  </label>
-                  <label className="field span3">
-                    Driver base pay / stop (cents)
-                    <input className="input" defaultValue="550" />
-                    <span className="tiny muted">Drivers keep 100% of tips</span>
-                  </label>
-                  <label className="field span3">
-                    Default store commission
-                    <input className="input" defaultValue="0.15" />
-                    <span className="tiny muted">0.15 = 15%</span>
-                  </label>
-
-                  <div className="span6" style={{ marginTop: 8 }}>
-                    <div
-                      style={{
-                        padding: 16,
-                        background: 'var(--surface-2)',
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 12,
-                      }}
-                    >
-                      <div>
-                        <div className="strong" style={{ fontSize: 14 }}>📍 Service Area & ZIP Codes</div>
-                        <div className="small muted">
-                          Currently serving <strong>{zipList.filter((z) => z.active).length} active ZIP codes</strong> across MD, DC, and VA.
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-outline btn-sm"
-                        onClick={() => setSubView('zones')}
-                      >
-                        Manage Service Zones & ZIPs →
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="span6" style={{ marginTop: 12 }}>
-                    <button className="btn btn-primary" onClick={() => alert('Settings saved successfully')}>
-                      Save settings
-                    </button>
-                  </div>
+            <div className="stack" style={{ gap: 24, maxWidth: 960 }}>
+              <div className="page-h">
+                <div>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Settings</h1>
+                  <h2 style={{ margin: '8px 0 0', fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
+                    Marketplace settings
+                  </h2>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>
+                    Fees, payouts and delivery schedule. Changes apply to new orders immediately.
+                  </p>
                 </div>
+              </div>
+
+              {/* CARD 1: Customer fees */}
+              <div
+                className="card"
+                style={{
+                  background: '#fff',
+                  borderRadius: 16,
+                  padding: '24px 28px',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                  Customer fees
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Delivery fee per store (cents)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="599"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>e.g. 599 = $5.99</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Service fee rate
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="0.05"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>0.05 = 5% of items</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Minimum service fee (cents)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="199"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Applied when % is lower</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Minimum order (cents)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="1500"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Cart subtotal required</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1', maxWidth: 380 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Tax rate
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="0"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Use 0 where groceries are tax-exempt</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* CARD 2: Partners */}
+              <div
+                className="card"
+                style={{
+                  background: '#fff',
+                  borderRadius: 16,
+                  padding: '24px 28px',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                  Partners
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Default merchant commission
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="0.15"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>0.15 = 15% for new stores</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Driver base pay per order (cents)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="550"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Drivers also keep 100% of tips</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1', maxWidth: 380 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Items per BuckDuck bag
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="10"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Used to estimate bags per order</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* CARD 3: Delivery schedule */}
+              <div
+                className="card"
+                style={{
+                  background: '#fff',
+                  borderRadius: 16,
+                  padding: '24px 28px',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                  Delivery schedule
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Delivery day
+                    </span>
+                    <select
+                      className="input"
+                      defaultValue="Saturday"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, background: '#fff' }}
+                    >
+                      <option value="Saturday">Saturday</option>
+                      <option value="Sunday">Sunday</option>
+                      <option value="Friday">Friday</option>
+                    </select>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>BuckDuck delivers once a week</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Order cutoff (hours before window)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="24"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Gives stores time to pack</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Weeks of windows to publish
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="4"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Default capacity per window
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue="120"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Orders per window</span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Default windows (JSON)
+                    </span>
+                    <input
+                      className="input"
+                      defaultValue='[["06:00","12:00"],["12:00","16:00"]]'
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>
+                      [[&quot;06:00&quot;,&quot;12:00&quot;],[&quot;12:00&quot;,&quot;16:00&quot;]] = 6 AM–12 PM and 12 PM–4 PM
+                    </span>
+                  </label>
+
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
+                      Service ZIP codes
+                    </span>
+                    <input
+                      className="input"
+                      placeholder="Leave blank to accept all ZIPs"
+                      defaultValue="20910, 20901, 20902, 20903, 20904, 20905, 20906, 20912, 20850, 20852, 20011, 20012"
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#64748B' }}>
+                      Comma-separated, e.g. 77036,77042,77072
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => alert('Settings saved successfully')}
+                  style={{
+                    background: '#0B1527',
+                    color: '#ffffff',
+                    padding: '12px 28px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Save settings
+                </button>
               </div>
             </div>
           )}
@@ -2386,6 +2914,174 @@ export default function AdminConsolePage() {
                 Save changes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD DELIVERY WINDOW MODAL (Screenshot 3) */}
+      {showAddWindowModal && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddWindowModal(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <div
+            className="modal-box"
+            style={{
+              background: '#ffffff',
+              borderRadius: 16,
+              maxWidth: 520,
+              width: '100%',
+              padding: '28px 32px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 24,
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
+                Add delivery window
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowAddWindowModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  cursor: 'pointer',
+                  padding: 6,
+                  borderRadius: 999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateWindow} className="stack" style={{ gap: 20 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: 16,
+                }}
+              >
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Date</span>
+                  <input
+                    type="date"
+                    required
+                    value={newWinDate}
+                    onChange={(e) => setNewWinDate(e.target.value)}
+                    className="input"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #CBD5E1',
+                      fontSize: 14,
+                      background: '#fff',
+                    }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Start</span>
+                  <input
+                    type="time"
+                    required
+                    value={newWinStart}
+                    onChange={(e) => setNewWinStart(e.target.value)}
+                    className="input"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #CBD5E1',
+                      fontSize: 14,
+                      background: '#fff',
+                    }}
+                  />
+                </label>
+
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>End</span>
+                  <input
+                    type="time"
+                    required
+                    value={newWinEnd}
+                    onChange={(e) => setNewWinEnd(e.target.value)}
+                    className="input"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #CBD5E1',
+                      fontSize: 14,
+                      background: '#fff',
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div>
+                <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 220 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Capacity</span>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={newWinCapacity}
+                    onChange={(e) => setNewWinCapacity(Number(e.target.value))}
+                    className="input"
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid #CBD5E1',
+                      fontSize: 14,
+                      background: '#fff',
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    background: '#0B1527',
+                    color: '#ffffff',
+                    padding: '12px 28px',
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Create window
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
