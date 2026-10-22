@@ -62,10 +62,35 @@ export default function DriverAppPage() {
     }
   };
 
+  // Automatically set driver online as soon as app opens with driver credentials
   useEffect(() => {
-    if (user && user.driver_online !== undefined) {
-      setIsOnline(Boolean(user.driver_online));
-    }
+    if (!user || user.role !== 'driver') return;
+
+    const autoSetOnline = async () => {
+      const token = localStorage.getItem('bd_token');
+      setIsOnline(true);
+      try {
+        const socket = getSocket();
+        socket.emit('driver:toggle_online', {
+          driverId: user.id,
+          online: true,
+          name: user.name,
+        });
+
+        await fetch('/api/driver/toggle-online', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ online: true }),
+        });
+      } catch (err) {
+        console.warn('Auto-online failed:', err);
+      }
+    };
+
+    autoSetOnline();
+  }, [user?.id]);
+
+  useEffect(() => {
     loadDriverData();
     const interval = setInterval(loadDriverData, 15000);
     return () => clearInterval(interval);

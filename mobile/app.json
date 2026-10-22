@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "BuckDuck Driver",
+    "slug": "buckduck-driver",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1F4B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buckduck.driver"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1F4B"
+      },
+      "package": "com.buckduck.driver"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
