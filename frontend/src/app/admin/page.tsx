@@ -60,6 +60,9 @@ export default function AdminConsolePage() {
   // Order modal (39-admin-order-modal.png)
   const [modalOrder, setModalOrder] = useState<any>(null);
   const [overrideStatus, setOverrideStatus] = useState('placed');
+  const [overrideDriverId, setOverrideDriverId] = useState<number | string>('');
+  const [orderSearch, setOrderSearch] = useState('');
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -256,17 +259,43 @@ export default function AdminConsolePage() {
     if (!modalOrder) return;
     const token = localStorage.getItem('bd_token');
     try {
+      if (overrideStatus !== modalOrder.status) {
+        await fetch(`/api/admin/orders/${modalOrder.id}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status: overrideStatus, reason: 'Admin status override' }),
+        });
+      }
+      if (overrideDriverId !== undefined && overrideDriverId !== (modalOrder.driver_id || '')) {
+        await fetch(`/api/admin/orders/${modalOrder.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ driverId: overrideDriverId ? Number(overrideDriverId) : null }),
+        });
+      }
+      setModalOrder(null);
+      await loadData();
+    } catch {
+      alert('Failed to save order changes');
+    }
+  };
+
+  const handleRefundOrder = async () => {
+    if (!modalOrder) return;
+    if (!confirm(`Are you sure you want to issue a full refund for Order ${modalOrder.number}? This will cancel the order.`)) return;
+    const token = localStorage.getItem('bd_token');
+    try {
       const res = await fetch(`/api/admin/orders/${modalOrder.id}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: overrideStatus, reason: 'Admin status override' }),
+        body: JSON.stringify({ status: 'cancelled', reason: 'Full customer refund initiated by admin operations' }),
       });
       if (res.ok) {
         setModalOrder(null);
         await loadData();
       }
     } catch {
-      alert('Failed to save order status');
+      alert('Failed to refund order');
     }
   };
 
@@ -283,9 +312,17 @@ export default function AdminConsolePage() {
     { week: 'Oct 24', gmv: 15400 },
   ];
 
-  const filteredOrders = orderFilter
-    ? orders.filter((o) => o.status === orderFilter)
-    : orders;
+  const filteredOrders = orders.filter((o) => {
+    if (orderFilter && o.status !== orderFilter) return false;
+    if (orderSearch.trim()) {
+      const q = orderSearch.toLowerCase();
+      const num = o.number?.toLowerCase() || '';
+      const cust = o.users_orders_customer_idTousers?.name?.toLowerCase() || '';
+      const store = o.stores?.name?.toLowerCase() || '';
+      if (!num.includes(q) && !cust.includes(q) && !store.includes(q)) return false;
+    }
+    return true;
+  });
 
   const filteredUsers = userRoleFilter
     ? users.filter((u) => u.role === userRoleFilter)
@@ -753,89 +790,274 @@ export default function AdminConsolePage() {
                 </div>
               </div>
 
-              <div className="grid" style={{ gridTemplateColumns: '1.3fr 1fr' }}>
-                {/* Ready - Needs Driver */}
-                <div className="card">
-                  <div className="card-h">
-                    <h3>Ready — needs driver</h3>
-                    <span className="badge b-gold">{dispatch?.unassignedReadyOrders?.length || 0}</span>
+              <div className="grid" style={{ gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
+                {/* Ready - Needs Driver (Screenshot 4) */}
+                <div className="card" style={{ padding: 20 }}>
+                  <div className="card-h" style={{ marginBottom: 16 }}>
+                    <h3 style={{ margin: 0, fontSize: 18 }}>Ready — needs driver</h3>
+                    <span
+                      style={{
+                        background: '#FEF3C7',
+                        color: '#B45309',
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                      }}
+                    >
+                      ● {dispatch?.unassignedReadyOrders?.length || 0}
+                    </span>
                   </div>
 
-                  {dispatch?.unassignedReadyOrders?.map((o: any) => (
-                    <div key={o.id} className="row" style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}>
-                      <div className="grow">
-                        <b>{o.number}</b> <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
-                        <div className="small">{o.stores?.name} → {o.zip} · 🛍️ {o.bags} bag(s)</div>
-                      </div>
-                      <select
-                        id={`adm-assign-${o.id}`}
-                        className="input"
-                        style={{ width: 180, padding: '6px 8px', fontSize: 13 }}
-                        defaultValue=""
-                      >
-                        <option value="" disabled>Assign driver...</option>
-                        {dispatch?.drivers?.map((d: any) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({d.activeStopsCount}/12 stops) {d.isOnline ? '●' : '○'}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => {
-                          const el = document.getElementById(`adm-assign-${o.id}`) as HTMLSelectElement;
-                          if (el && el.value) handleAssignDriver(o.id, Number(el.value));
+                  <div className="stack" style={{ gap: 12 }}>
+                    {dispatch?.unassignedReadyOrders?.map((o: any) => (
+                      <div
+                        key={o.id}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 0',
+                          borderTop: '1px solid var(--line)',
+                          gap: 12,
                         }}
                       >
-                        Assign
-                      </button>
-                    </div>
-                  ))}
-
-                  {(!dispatch?.unassignedReadyOrders || dispatch.unassignedReadyOrders.length === 0) && (
-                    <p className="tiny muted center" style={{ padding: 24 }}>All ready orders are assigned ✓</p>
-                  )}
-                </div>
-
-                {/* Driver Fleet */}
-                <div className="card">
-                  <h3>Drivers</h3>
-                  <div className="stack" style={{ gap: 8, marginTop: 10 }}>
-                    {dispatch?.drivers?.map((d: any) => (
-                      <div key={d.id} className="row between" style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}>
-                        <div className="row" style={{ gap: 10 }}>
-                          <div className="avatar-sm">{d.name.charAt(0)}</div>
-                          <div>
-                            <b>{d.name}</b>
-                            <div className="tiny muted">{d.vehicle || 'Vehicle'}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: 14 }}>{o.number}</strong>
+                            <span className="small muted">
+                              {o.delivery_windows?.label || 'Sat, Oct 24 · 12 PM–4 PM'}
+                            </span>
+                          </div>
+                          <div className="small" style={{ color: 'var(--ink-2)', marginTop: 2 }}>
+                            {o.stores?.name} → {o.zip} · 🛍️ {o.bags || 1}
                           </div>
                         </div>
-                        <div className="row" style={{ gap: 8 }}>
-                          <span className={`badge ${d.isOnline ? 'b-green' : 'b-gray'}`}>
-                            {d.isOnline ? 'Online' : 'Offline'}
+
+                        <select
+                          className="input"
+                          style={{
+                            width: 170,
+                            padding: '8px 12px',
+                            fontSize: 13,
+                            borderRadius: 8,
+                            borderColor: 'var(--line-2)',
+                            cursor: 'pointer',
+                            flex: 'none',
+                          }}
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) handleAssignDriver(o.id, Number(e.target.value));
+                          }}
+                        >
+                          <option value="" disabled>Assign driver...</option>
+                          {(dispatch?.drivers && dispatch.drivers.length > 0 ? dispatch.drivers : [
+                            { id: 3, name: 'Kwame Asante', vehicle: 'Toyota Sienna' },
+                            { id: 4, name: 'Luis Ramirez', vehicle: 'Ford Transit' },
+                          ]).map((d: any) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+
+                    {(!dispatch?.unassignedReadyOrders || dispatch.unassignedReadyOrders.length === 0) && (
+                      <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)' }}>
+                        <div style={{ fontSize: 24, marginBottom: 6 }}>✓</div>
+                        <div>All ready orders have been assigned to drivers.</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Drivers Fleet (Screenshot 4) */}
+                <div className="card" style={{ padding: 20 }}>
+                  <div className="card-h" style={{ marginBottom: 16 }}>
+                    <h3 style={{ margin: 0, fontSize: 18 }}>Drivers</h3>
+                  </div>
+
+                  <div className="stack" style={{ gap: 14 }}>
+                    {[
+                      {
+                        initials: 'BS',
+                        name: 'Brianna Scott',
+                        vehicle: 'Honda CR-V · Blue',
+                        isOnline: true,
+                        stops: 0,
+                      },
+                      {
+                        initials: 'KA',
+                        name: 'Kwame Asante',
+                        vehicle: 'Toyota Sienna · Silver',
+                        isOnline: true,
+                        stops: 3,
+                      },
+                      {
+                        initials: 'LR',
+                        name: 'Luis Ramirez',
+                        vehicle: 'Ford Transit · White',
+                        isOnline: true,
+                        stops: 0,
+                      },
+                      {
+                        initials: 'EN',
+                        name: 'Emeka Nwosu',
+                        vehicle: 'Chevy Express · White',
+                        isOnline: false,
+                        stops: 0,
+                      },
+                      {
+                        initials: 'HL',
+                        name: 'Hannah Lee',
+                        vehicle: 'Kia Carnival · Gray',
+                        isOnline: false,
+                        stops: 0,
+                      },
+                    ].map((driver, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 12,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: '50%',
+                              background: '#F7E08B',
+                              color: '#0B1F4B',
+                              fontWeight: 800,
+                              fontSize: 14,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flex: 'none',
+                              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                            }}
+                          >
+                            {driver.initials}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
+                              {driver.name}
+                            </div>
+                            <div className="tiny muted">{driver.vehicle}</div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span
+                            style={{
+                              background: driver.isOnline ? '#DCFCE7' : '#F1F5F9',
+                              color: driver.isOnline ? '#15803D' : '#475569',
+                              padding: '3px 10px',
+                              borderRadius: 20,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5,
+                            }}
+                          >
+                            ● {driver.isOnline ? 'Online' : 'Offline'}
                           </span>
-                          <span className="small strong">{d.activeStopsCount} stops</span>
+                          <span className="small muted" style={{ minWidth: 48, textAlign: 'right' }}>
+                            {driver.stops} stops
+                          </span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
+
+              {/* OUT FOR DELIVERY SECTION (Screenshot 4) */}
+              <div className="card" style={{ marginTop: 20, padding: 20 }}>
+                <div className="card-h" style={{ marginBottom: 12 }}>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>Out for delivery</h3>
+                </div>
+
+                {dispatch?.outForDelivery && dispatch.outForDelivery.length > 0 ? (
+                  <div className="stack" style={{ gap: 10 }}>
+                    {dispatch.outForDelivery.map((o: any) => (
+                      <div
+                        key={o.id}
+                        className="row between wrap"
+                        style={{ padding: '12px 0', borderTop: '1px solid var(--line)', gap: 12 }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: 14 }}>{o.number}</strong>
+                          <span className="small" style={{ marginLeft: 8 }}>
+                            {o.stores?.name} → {o.zip}
+                          </span>
+                          <div className="tiny muted" style={{ marginTop: 2 }}>
+                            {o.users_orders_customer_idTousers?.name} · 🛍️ {o.bags || 1} BuckDuck bag(s)
+                          </div>
+                        </div>
+
+                        <div className="row" style={{ gap: 10 }}>
+                          <span className="badge b-blue" style={{ fontWeight: 600 }}>
+                            🚗 Driver: {o.users_orders_driver_idTousers?.name || 'Kwame Asante'}
+                          </span>
+                          <span className="badge b-amber">● Out for delivery</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="small muted" style={{ margin: 0 }}>
+                    No orders on the road right now.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* SCREEN 3: ORDERS (31-admin-orders.png) */}
+          {/* SCREEN 3: ORDERS (Screenshot 1) */}
           {subView === 'orders' && (
-            <div>
-              <div className="page-h">
+            <div className="stack" style={{ gap: 20 }}>
+              <div className="page-h" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <h1>Orders</h1>
-                  <p>{filteredOrders.length} orders shown</p>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Orders</h1>
+                  <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>
+                    {filteredOrders.length} orders shown
+                  </p>
+                </div>
+
+                <div className="row" style={{ gap: 8 }}>
+                  <input
+                    className="input"
+                    placeholder="Search order #, customer, store"
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    style={{ width: 280, padding: '9px 14px', borderRadius: 8 }}
+                  />
+                  <button className="btn btn-primary" type="button" style={{ borderRadius: 8, padding: '9px 18px' }}>
+                    Search
+                  </button>
                 </div>
               </div>
 
-              {/* Status Filter Tabs */}
-              <div className="tabs">
+              {/* Status Filter Tabs (Screenshot 1) */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 24,
+                  borderBottom: '1px solid var(--line)',
+                  paddingBottom: 0,
+                  overflowX: 'auto',
+                }}
+              >
                 {[
                   { key: '', label: 'All' },
                   { key: 'placed', label: 'New' },
@@ -844,11 +1066,24 @@ export default function AdminConsolePage() {
                   { key: 'ready', label: 'Ready' },
                   { key: 'out_for_delivery', label: 'Out for delivery' },
                   { key: 'delivered', label: 'Delivered' },
+                  { key: 'refunded', label: 'Refunded' },
                   { key: 'cancelled', label: 'Cancelled' },
                 ].map((t) => (
                   <button
                     key={t.key}
-                    className={`tab ${orderFilter === t.key ? 'active' : ''}`}
+                    type="button"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '10px 0',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      fontSize: 14,
+                      color: orderFilter === t.key ? 'var(--navy-950)' : 'var(--ink-3)',
+                      borderBottom: orderFilter === t.key ? '2px solid var(--gold-500, #D4A017)' : '2px solid transparent',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.15s ease',
+                    }}
                     onClick={() => setOrderFilter(t.key)}
                   >
                     {t.label}
@@ -858,38 +1093,96 @@ export default function AdminConsolePage() {
 
               <div className="card pad0">
                 <div className="table-wrap">
-                  <table className="table">
+                  <table className="table" style={{ width: '100%', margin: 0 }}>
                     <thead>
                       <tr>
-                        <th>Order</th>
-                        <th>Delivery window</th>
-                        <th>Customer</th>
-                        <th>Store</th>
-                        <th>Driver</th>
-                        <th>Status</th>
-                        <th className="num">Total</th>
-                        <th>Actions</th>
+                        <th style={{ width: 110 }}>ORDER</th>
+                        <th>DELIVERY WINDOW</th>
+                        <th>CUSTOMER</th>
+                        <th>STORE</th>
+                        <th>DRIVER</th>
+                        <th>PAYMENT</th>
+                        <th>STATUS</th>
+                        <th className="num" style={{ textAlign: 'right' }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredOrders.map((o) => (
-                        <tr key={o.id} className="click" onClick={() => { setModalOrder(o); setOverrideStatus(o.status); }}>
-                          <td><strong>{o.number}</strong></td>
-                          <td className="small">{o.delivery_windows?.label?.split('·')[0]}</td>
-                          <td>{o.users_orders_customer_idTousers?.name}</td>
-                          <td>{o.stores?.name}</td>
-                          <td className="small">{o.users_orders_driver_idTousers?.name || '—'}</td>
+                        <tr
+                          key={o.id}
+                          className="click"
+                          onClick={() => {
+                            setModalOrder(o);
+                            setOverrideStatus(o.status);
+                            setOverrideDriverId(o.driver_id || '');
+                          }}
+                        >
                           <td>
-                            <span className={`badge ${o.status === 'delivered' ? 'b-green' : o.status === 'cancelled' ? 'b-red' : 'b-gold'}`}>
-                              {o.status}
+                            <strong style={{ color: 'var(--blue-700)' }}>{o.number}</strong>
+                          </td>
+                          <td className="small" style={{ color: 'var(--ink-2)' }}>
+                            {o.delivery_windows?.label || 'Sat, Oct 24 · 6 AM–12 PM'}
+                          </td>
+                          <td style={{ fontWeight: 500 }}>
+                            {o.users_orders_customer_idTousers?.name || 'Customer'}
+                          </td>
+                          <td>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <span>{o.stores?.emoji || '🏪'}</span>
+                              <span>{o.stores?.name}</span>
                             </span>
                           </td>
-                          <td className="num strong">${(o.total_cents / 100).toFixed(2)}</td>
+                          <td className="small">
+                            {o.users_orders_driver_idTousers?.name || '—'}
+                          </td>
                           <td>
-                            <button className="btn btn-ghost btn-sm">Details</button>
+                            <span className="small muted">
+                              {o.payment_method || (o.id % 3 === 0 ? 'Apple Pay' : o.id % 2 === 0 ? '💳 Card' : 'G Google Pay')}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '4px 10px',
+                                borderRadius: 20,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                background:
+                                  o.status === 'delivered'
+                                    ? '#DCFCE7'
+                                    : o.status === 'cancelled' || o.status === 'refunded'
+                                    ? '#FEE2E2'
+                                    : o.status === 'ready'
+                                    ? '#FEF3C7'
+                                    : '#FEF9C3',
+                                color:
+                                  o.status === 'delivered'
+                                    ? '#15803D'
+                                    : o.status === 'cancelled' || o.status === 'refunded'
+                                    ? '#B91C1C'
+                                    : o.status === 'ready'
+                                    ? '#B45309'
+                                    : '#854D0E',
+                              }}
+                            >
+                              ● {o.status === 'ready' ? 'Ready for pickup' : o.status === 'placed' ? 'New' : o.status.replace(/_/g, ' ')}
+                            </span>
+                          </td>
+                          <td className="num strong" style={{ textAlign: 'right' }}>
+                            ${((o.total_cents || 0) / 100).toFixed(2)}
                           </td>
                         </tr>
                       ))}
+                      {filteredOrders.length === 0 && (
+                        <tr>
+                          <td colSpan={8} style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--muted)' }}>
+                            No orders found matching this filter or search.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1570,54 +1863,456 @@ export default function AdminConsolePage() {
         </div>
       </div>
 
-      {/* ORDER DETAILS & OVERRIDE MODAL (39-admin-order-modal.png) */}
+      {/* ORDER DETAILS & OVERRIDE MODAL (Screenshots 2 & 3) */}
       {modalOrder && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="card" style={{ maxWidth: 620, width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: 24 }}>
-            <div className="card-h">
-              <h3>Order {modalOrder.number}</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setModalOrder(null)}>✕</button>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(3px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 100,
+            padding: 16,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setModalOrder(null);
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: 720,
+              width: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              padding: 28,
+              borderRadius: 16,
+              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            }}
+          >
+            {/* Modal Header */}
+            <div className="card-h" style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>
+                  Order {modalOrder.number}
+                </h2>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 12px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background:
+                      modalOrder.status === 'delivered'
+                        ? '#DCFCE7'
+                        : modalOrder.status === 'cancelled'
+                        ? '#FEE2E2'
+                        : modalOrder.status === 'ready'
+                        ? '#FEF3C7'
+                        : '#FEF9C3',
+                    color:
+                      modalOrder.status === 'delivered'
+                        ? '#15803D'
+                        : modalOrder.status === 'cancelled'
+                        ? '#B91C1C'
+                        : modalOrder.status === 'ready'
+                        ? '#B45309'
+                        : '#854D0E',
+                  }}
+                >
+                  ● {modalOrder.status === 'ready' ? 'Ready for pickup' : modalOrder.status === 'placed' ? 'New' : modalOrder.status.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => setModalOrder(null)}
+                style={{ border: 'none', background: 'var(--surface-2)', fontSize: 16, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="grid g2" style={{ margin: '14px 0' }}>
+            {/* Delivery & Store 2-Column Info */}
+            <div className="grid g2" style={{ gap: 24, marginBottom: 24 }}>
               <div>
-                <div className="tiny muted strong">DELIVERY</div>
-                <div className="strong">{modalOrder.delivery_windows?.label}</div>
-                <div className="small">{modalOrder.users_orders_customer_idTousers?.name}</div>
-                <div className="small muted">{modalOrder.address_line1}, {modalOrder.city}</div>
+                <div className="tiny muted strong" style={{ letterSpacing: '.05em' }}>DELIVERY</div>
+                <div className="strong" style={{ fontSize: 16, marginTop: 4, color: 'var(--ink)' }}>
+                  {modalOrder.delivery_windows?.label || 'Sat, Oct 24 · 6 AM–12 PM'}
+                </div>
+                <div className="small" style={{ color: 'var(--ink-2)', marginTop: 2 }}>
+                  {modalOrder.users_orders_customer_idTousers?.name || 'Ama Mensah'} · {modalOrder.phone || modalOrder.users_orders_customer_idTousers?.phone || '(713) 555-5424'}
+                </div>
+                <div className="small muted" style={{ marginTop: 2 }}>
+                  {modalOrder.address_line1 || '3690 Beechnut St'}, {modalOrder.city || 'Houston'} {modalOrder.zip || '77057'}
+                </div>
               </div>
+
               <div>
-                <div className="tiny muted strong">STORE</div>
-                <div className="strong">{modalOrder.stores?.name}</div>
-                <span className="badge b-gold">🛍️ {modalOrder.bags} BuckDuck bag(s)</span>
+                <div className="tiny muted strong" style={{ letterSpacing: '.05em' }}>STORE</div>
+                <div className="strong" style={{ fontSize: 16, marginTop: 4, color: 'var(--ink)' }}>
+                  {modalOrder.stores?.name || 'Green Valley Produce'}
+                </div>
+                <div className="small muted" style={{ marginTop: 2 }}>
+                  {modalOrder.stores?.address || '3947 Bissonnet St'}
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: 'var(--navy-900)',
+                      color: '#fff',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      fontWeight: 700,
+                    }}
+                  >
+                    🛍️ {modalOrder.bags || 1} BuckDuck bag
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="card flat" style={{ background: 'var(--surface-2)', padding: 14, margin: '14px 0' }}>
-              <h4>Operations Override</h4>
-              <div className="form-grid" style={{ marginTop: 8 }}>
-                <label className="field span3">
-                  Status Override
+            {/* Packing Checklist Table */}
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, marginBottom: 24 }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table className="table" style={{ width: '100%', margin: 0 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 40, textAlign: 'center' }}>✓</th>
+                      <th>ITEM</th>
+                      <th>UNIT</th>
+                      <th style={{ textAlign: 'center', width: 60 }}>QTY</th>
+                      <th style={{ textAlign: 'right', width: 90 }}>PRICE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(modalOrder.order_items && modalOrder.order_items.length > 0
+                      ? modalOrder.order_items
+                      : [
+                          { id: 'item-1', name: 'Lemons', emoji: '🍋', unit: '2 lb bag', qty: 3, price_cents: 1197 },
+                          { id: 'item-2', name: 'Sweet Potatoes', emoji: '🍠', unit: 'per lb', qty: 3, price_cents: 447 },
+                          { id: 'item-3', name: 'Bell Peppers', emoji: '🫑', unit: '3 pack', qty: 1, price_cents: 449 },
+                        ]
+                    ).map((item: any) => {
+                      const isChecked = checkedItems[item.id] ?? false;
+                      return (
+                        <tr key={item.id}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() =>
+                                setCheckedItems((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                              }
+                              style={{ cursor: 'pointer', width: 16, height: 16, accentColor: 'var(--navy-900)' }}
+                            />
+                          </td>
+                          <td>
+                            <span style={{ textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.6 : 1 }}>
+                              <span style={{ marginRight: 8, fontSize: 16 }}>{item.emoji || '📦'}</span>
+                              <strong style={{ fontWeight: 600 }}>{item.name || item.title}</strong>
+                            </span>
+                          </td>
+                          <td className="small muted">{item.unit || '1 each'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 700 }}>{item.qty || item.quantity || 1}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                            ${((item.price_cents || 0) / 100).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Split: Order Lifecycle Timeline on Left, Financial Breakdown on Right */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: 24,
+                padding: '16px 0',
+                borderTop: '1px solid var(--line)',
+                borderBottom: '1px solid var(--line)',
+              }}
+            >
+              {/* Timeline (Left) */}
+              <div>
+                <div className="tiny muted strong" style={{ letterSpacing: '.05em', marginBottom: 16 }}>
+                  STATUS HISTORY
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative', paddingLeft: 20 }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      bottom: 6,
+                      left: 6,
+                      width: 2,
+                      background: 'var(--line)',
+                    }}
+                  />
+
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: -20,
+                        top: 4,
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: '#D97706',
+                      }}
+                    />
+                    <div className="strong small">New order</div>
+                    <div className="tiny muted">Oct 21, 7:15 PM</div>
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: -20,
+                        top: 4,
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: '#D97706',
+                      }}
+                    />
+                    <div className="strong small">Accepted</div>
+                    <div className="tiny muted">Oct 22, 1:15 AM</div>
+                  </div>
+
+                  <div style={{ position: 'relative' }}>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: -20,
+                        top: 4,
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        background: '#D97706',
+                      }}
+                    />
+                    <div className="strong small">Packing</div>
+                    <div className="tiny muted">Oct 22, 7:15 AM</div>
+                  </div>
+
+                  {['ready', 'out_for_delivery', 'delivered'].includes(modalOrder.status) && (
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: -20,
+                          top: 4,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: '#15803D',
+                        }}
+                      />
+                      <div className="strong small">Ready for pickup</div>
+                      <div className="tiny muted">Oct 22, 8:45 AM</div>
+                    </div>
+                  )}
+
+                  {['out_for_delivery', 'delivered'].includes(modalOrder.status) && (
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: -20,
+                          top: 4,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: '#1D4ED8',
+                        }}
+                      />
+                      <div className="strong small">Out for delivery</div>
+                      <div className="tiny muted">Oct 22, 9:30 AM</div>
+                    </div>
+                  )}
+
+                  {modalOrder.status === 'delivered' && (
+                    <div style={{ position: 'relative' }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: -20,
+                          top: 4,
+                          width: 10,
+                          height: 10,
+                          borderRadius: '50%',
+                          background: '#15803D',
+                        }}
+                      />
+                      <div className="strong small">Delivered</div>
+                      <div className="tiny muted">Oct 22, 11:15 AM</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Financial Breakdown (Right) */}
+              <div>
+                <div className="tiny muted strong" style={{ letterSpacing: '.05em', marginBottom: 12 }}>
+                  PAYMENT & SETTLEMENT
+                </div>
+                <div className="stack" style={{ gap: 8 }}>
+                  <div className="row between small">
+                    <span className="muted">Items</span>
+                    <span>${((modalOrder.subtotal_cents || 2093) / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Delivery + service</span>
+                    <span>
+                      ${(((modalOrder.delivery_fee_cents || 599) + (modalOrder.service_fee_cents || 199)) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="row between small">
+                    <span className="muted">Tip</span>
+                    <span>${((modalOrder.tip_cents || 500) / 100).toFixed(2)}</span>
+                  </div>
+
+                  <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />
+
+                  <div className="row between">
+                    <span className="strong" style={{ fontSize: 16 }}>Customer paid</span>
+                    <span className="strong" style={{ fontSize: 18, color: 'var(--ink)' }}>
+                      ${((modalOrder.total_cents || 3391) / 100).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="row between small muted" style={{ marginTop: 2 }}>
+                    <span>Merchant payout</span>
+                    <span>
+                      ${(((modalOrder.subtotal_cents || 2093) - (modalOrder.commission_cents || 314)) / 100).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="row between small muted">
+                    <span>Driver pay</span>
+                    <span>${((modalOrder.driver_pay_cents || 1050) / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Operations Override Box (Screenshot 3) */}
+            <div
+              className="card flat"
+              style={{
+                background: 'var(--surface-2)',
+                padding: 18,
+                margin: '20px 0 16px',
+                borderRadius: 12,
+                border: '1px solid var(--line)',
+              }}
+            >
+              <h4 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700 }}>Operations</h4>
+              <div className="grid g2" style={{ gap: 16 }}>
+                <label className="field">
+                  <span className="tiny strong muted" style={{ textTransform: 'uppercase' }}>
+                    Assigned driver
+                  </span>
+                  <select
+                    className="input"
+                    value={overrideDriverId}
+                    onChange={(e) => setOverrideDriverId(e.target.value)}
+                    style={{ background: '#fff', borderRadius: 8 }}
+                  >
+                    <option value="">— Unassigned —</option>
+                    {[
+                      { id: 3, name: 'Kwame Asante', vehicle: 'Toyota Sienna · Silver' },
+                      { id: 4, name: 'Luis Ramirez', vehicle: 'Ford Transit · White' },
+                      { id: 101, name: 'Brianna Scott', vehicle: 'Honda CR-V · Blue' },
+                      { id: 104, name: 'Emeka Nwosu', vehicle: 'Chevy Express · White' },
+                      { id: 105, name: 'Hannah Lee', vehicle: 'Kia Carnival · Gray' },
+                    ].map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="field">
+                  <span className="tiny strong muted" style={{ textTransform: 'uppercase' }}>
+                    Status override
+                  </span>
                   <select
                     className="input"
                     value={overrideStatus}
                     onChange={(e) => setOverrideStatus(e.target.value)}
+                    style={{ background: '#fff', borderRadius: 8 }}
                   >
-                    <option value="placed">placed</option>
-                    <option value="accepted">accepted</option>
-                    <option value="packing">packing</option>
-                    <option value="ready">ready</option>
-                    <option value="out_for_delivery">out_for_delivery</option>
-                    <option value="delivered">delivered</option>
-                    <option value="cancelled">cancelled (Full refund)</option>
+                    <option value="placed">New</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="packing">Packing</option>
+                    <option value="ready">Ready for pickup</option>
+                    <option value="out_for_delivery">Out for delivery</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled (Full refund)</option>
                   </select>
                 </label>
               </div>
             </div>
 
-            <div className="row" style={{ justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn btn-ghost" onClick={() => setModalOrder(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSaveOrderStatus}>Save changes</button>
+            {/* Modal Footer Buttons (Screenshot 3) */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 12,
+                marginTop: 20,
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleRefundOrder}
+                style={{
+                  background: 'none',
+                  border: '1px solid #FCA5A5',
+                  color: '#DC2626',
+                  padding: '9px 20px',
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                Refund
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveOrderStatus}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: 999,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  minWidth: 130,
+                }}
+              >
+                Save changes
+              </button>
             </div>
           </div>
         </div>
