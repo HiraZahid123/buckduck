@@ -38,6 +38,47 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [windows, setWindows] = useState<DeliveryWindow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [zipInput, setZipInput] = useState('');
+  const [zipStatus, setZipStatus] = useState<{ checked: boolean; valid: boolean; message: string } | null>(null);
+
+  const handleCheckZip = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanZip = zipInput.trim();
+    if (!cleanZip) return;
+
+    const supportedZips: Record<string, string> = {
+      '20910': 'Downtown Silver Spring, MD',
+      '20901': 'Silver Spring / Four Corners, MD',
+      '20902': 'Wheaton / Silver Spring, MD',
+      '20903': 'Hillandale, MD',
+      '20904': 'White Oak / Colesville, MD',
+      '20905': 'Cloverly, MD',
+      '20906': 'Aspen Hill / Glenmont, MD',
+      '20912': 'Takoma Park, MD',
+      '20850': 'Rockville, MD',
+      '20852': 'North Bethesda, MD',
+      '20011': 'Petworth / Brightwood, DC',
+      '20012': 'Takoma, DC',
+    };
+
+    if (supportedZips[cleanZip] || cleanZip.startsWith('209') || cleanZip.startsWith('208')) {
+      const area = supportedZips[cleanZip] || 'Silver Spring & Montgomery County, MD';
+      setZipStatus({
+        checked: true,
+        valid: true,
+        message: `🎉 Great news! We deliver to ${area} (${cleanZip}) every Saturday!`,
+      });
+      try {
+        localStorage.setItem('bd_zip', cleanZip);
+      } catch {}
+    } else {
+      setZipStatus({
+        checked: true,
+        valid: false,
+        message: `📍 ${cleanZip} is outside our current Saturday pilot zone (Silver Spring & Montgomery County, MD). Expanding soon!`,
+      });
+    }
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -113,6 +154,63 @@ export default function HomePage() {
             <p className="lead">
               Shop African, Caribbean and local markets in one cart. Each store packs your order in sealed BuckDuck bags, and our drivers bring it all to your door in the window you choose.
             </p>
+
+            {/* Interactive ZIP Code Validator */}
+            <div
+              style={{
+                marginTop: 20,
+                padding: '14px 18px',
+                background: 'rgba(255, 255, 255, 0.08)',
+                borderRadius: 12,
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+                maxWidth: 480,
+              }}
+            >
+              <form onSubmit={handleCheckZip} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 18 }}>📍</span>
+                <input
+                  type="text"
+                  placeholder="Enter delivery ZIP (e.g. 20910)"
+                  value={zipInput}
+                  onChange={(e) => setZipInput(e.target.value)}
+                  maxLength={5}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    color: '#0B1F4B',
+                    border: 0,
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    fontSize: 14,
+                    fontWeight: 600,
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-sm btn-gold"
+                  style={{ padding: '8px 16px', fontWeight: 700 }}
+                >
+                  Check ZIP
+                </button>
+              </form>
+
+              {zipStatus && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    fontSize: 13,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    background: zipStatus.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    color: zipStatus.valid ? '#86efac' : '#fca5a5',
+                    border: `1px solid ${zipStatus.valid ? 'rgba(34, 197, 94, 0.4)' : 'rgba(239, 68, 68, 0.4)'}`,
+                  }}
+                >
+                  {zipStatus.message}
+                </div>
+              )}
+            </div>
             <div className="row wrap mt24">
               <Link className="btn btn-gold btn-lg" href="/stores">
                 Start shopping

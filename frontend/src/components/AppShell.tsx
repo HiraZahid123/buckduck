@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Header from './Header';
 import Footer from './Footer';
+import CartDrawer from './CartDrawer';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {!isPortal && <Header />}
       <main style={{ minHeight: isPortal ? '100vh' : 'calc(100vh - 350px)' }}>{children}</main>
       {!isPortal && <Footer />}
+      {!isPortal && <CartDrawer />}
     </>
   );
 }

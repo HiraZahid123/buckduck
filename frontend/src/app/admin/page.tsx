@@ -21,6 +21,7 @@ export default function AdminConsolePage() {
   const [orderFilter, setOrderFilter] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedMapPin, setSelectedMapPin] = useState<any>(null);
 
   // Order modal (39-admin-order-modal.png)
   const [modalOrder, setModalOrder] = useState<any>(null);
@@ -448,6 +449,140 @@ export default function AdminConsolePage() {
                 <div>
                   <h1>Dispatch board</h1>
                   <p>Assign packed orders to drivers and monitor routes for delivery day.</p>
+                </div>
+              </div>
+
+              {/* 4.a: Visual Saturday Dispatch Topology Map */}
+              <div className="card mb24" style={{ padding: 18, background: '#07132c', color: '#fff', borderRadius: 14, overflow: 'hidden' }}>
+                <div className="row between wrap mb12">
+                  <div>
+                    <div className="tiny" style={{ color: 'var(--gold-400)', fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+                      SATURDAY ROUTE TOPOLOGY · SILVER SPRING METRO
+                    </div>
+                    <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>
+                      Live Fleet & Hub Distribution
+                    </div>
+                  </div>
+
+                  <div className="row wrap" style={{ gap: 8 }}>
+                    <span className="badge" style={{ background: 'rgba(212, 160, 23, 0.2)', color: 'var(--gold-400)', border: '1px solid rgba(212, 160, 23, 0.4)' }}>
+                      🏪 6 Partner Grocers
+                    </span>
+                    <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', border: '1px solid rgba(59, 130, 246, 0.4)' }}>
+                      🚗 {dispatch?.drivers?.length || 2} Active Vans
+                    </span>
+                    <span className="badge" style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#86efac', border: '1px solid rgba(34, 197, 94, 0.4)' }}>
+                      📦 {orders.length} Deliveries
+                    </span>
+                  </div>
+                </div>
+
+                {/* SVG Visual Map Canvas */}
+                <div style={{ position: 'relative', width: '100%', height: 260, background: 'radial-gradient(ellipse at 50% 50%, #0c204c 0%, #050e22 100%)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                  <svg viewBox="0 0 900 300" style={{ width: '100%', height: '100%' }}>
+                    {/* Zone Boundary Grid */}
+                    <defs>
+                      <pattern id="dispatch-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+                      </pattern>
+                      <linearGradient id="route-pulse" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#D4A017" stopOpacity="0.8" />
+                        <stop offset="50%" stopColor="#3B82F6" stopOpacity="0.7" />
+                        <stop offset="100%" stopColor="#10B981" stopOpacity="0.9" />
+                      </linearGradient>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#dispatch-grid)" />
+
+                    {/* Zone Labels */}
+                    <text x="70" y="45" fill="rgba(255,255,255,0.3)" fontSize="11" fontWeight="700">WHEATON / GLENMONT (20902)</text>
+                    <text x="360" y="45" fill="rgba(255,255,255,0.3)" fontSize="11" fontWeight="700">SILVER SPRING DOWNTOWN (20910)</text>
+                    <text x="680" y="45" fill="rgba(255,255,255,0.3)" fontSize="11" fontWeight="700">TAKOMA PARK / DC BORDER (20912)</text>
+
+                    {/* Connecting Route Arteries (Georgia Ave / Colesville Rd / I-495) */}
+                    <path d="M 80 160 Q 250 140 450 150 T 820 180" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="8" strokeLinecap="round" />
+                    <path d="M 450 60 L 450 260" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="6" strokeLinecap="round" />
+                    <path d="M 200 80 Q 450 200 750 120" fill="none" stroke="url(#route-pulse)" strokeWidth="3" strokeDasharray="8 6" />
+
+                    {/* Store Hub Pins (Gold) */}
+                    {[
+                      { name: 'Accra Market', x: 220, y: 120, emoji: '🌍', bags: 4 },
+                      { name: 'Lagos Pantry', x: 420, y: 130, emoji: '🍲', bags: 3 },
+                      { name: 'Addis Spice', x: 620, y: 105, emoji: '☕', bags: 2 },
+                      { name: 'Medina Halal', x: 310, y: 210, emoji: '🥩', bags: 5 },
+                      { name: 'Caribbean Spice', x: 540, y: 220, emoji: '🌴', bags: 3 },
+                      { name: 'Tropical Roots', x: 740, y: 170, emoji: '🥑', bags: 2 },
+                    ].map((st, idx) => (
+                      <g key={idx} style={{ cursor: 'pointer' }} onClick={() => setSelectedMapPin({ type: 'Store Hub', title: st.name, info: `${st.bags} sealed bags ready for Saturday dispatch` })}>
+                        <circle cx={st.x} cy={st.y} r="18" fill="#B7791F" stroke="#FDE047" strokeWidth="2.5" />
+                        <text x={st.x} y={st.y + 5} textAnchor="middle" fontSize="13">{st.emoji}</text>
+                        <text x={st.x} y={st.y + 30} textAnchor="middle" fill="#F7E08B" fontSize="11" fontWeight="700">{st.name}</text>
+                      </g>
+                    ))}
+
+                    {/* Driver Vans (Blue) */}
+                    {[
+                      { name: 'Kwame Asante', x: 380, y: 165, stops: 6 },
+                      { name: 'Kofi Mensah', x: 670, y: 140, stops: 4 },
+                    ].map((dv, idx) => (
+                      <g key={idx} style={{ cursor: 'pointer' }} onClick={() => setSelectedMapPin({ type: 'Active Driver', title: dv.name, info: `${dv.stops} assigned deliveries on active route` })}>
+                        <rect x={dv.x - 24} y={dv.y - 12} width="48" height="24" rx="12" fill="#1D4ED8" stroke="#93C5FD" strokeWidth="2" />
+                        <text x={dv.x} y={dv.y + 4} textAnchor="middle" fill="#fff" fontSize="11" fontWeight="800">🚗 {dv.stops}</text>
+                        <text x={dv.x} y={dv.y - 18} textAnchor="middle" fill="#93C5FD" fontSize="10" fontWeight="600">{dv.name}</text>
+                      </g>
+                    ))}
+
+                    {/* Customer Drop Pins (Green) */}
+                    {[
+                      { x: 150, y: 175, id: '10015-A' },
+                      { x: 270, y: 80, id: '10015-B' },
+                      { x: 490, y: 180, id: '10016' },
+                      { x: 590, y: 70, id: '10014' },
+                      { x: 790, y: 220, id: '10012' },
+                    ].map((dp, idx) => (
+                      <g key={idx} style={{ cursor: 'pointer' }} onClick={() => setSelectedMapPin({ type: 'Delivery Stop', title: `Order #${dp.id}`, info: 'Silver Spring, MD · Saturday customer drop-off' })}>
+                        <circle cx={dp.x} cy={dp.y} r="7" fill="#10B981" stroke="#fff" strokeWidth="1.5" />
+                        <circle cx={dp.x} cy={dp.y} r="12" fill="none" stroke="#10B981" strokeOpacity="0.4" strokeWidth="2" />
+                      </g>
+                    ))}
+                  </svg>
+
+                  {/* Selected Pin Details Overlay */}
+                  {selectedMapPin && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: 12,
+                        left: 14,
+                        background: 'rgba(11, 31, 75, 0.95)',
+                        border: '1px solid var(--gold-metal)',
+                        borderRadius: 8,
+                        padding: '8px 14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        zIndex: 10,
+                      }}
+                    >
+                      <div>
+                        <span className="tiny muted" style={{ textTransform: 'uppercase', color: 'var(--gold-400)' }}>{selectedMapPin.type}</span>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>{selectedMapPin.title}</div>
+                        <div className="tiny" style={{ opacity: 0.8 }}>{selectedMapPin.info}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedMapPin(null)}
+                        style={{ background: 'none', border: 0, color: '#fff', cursor: 'pointer', padding: 4 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 14, fontSize: 11, background: 'rgba(0,0,0,0.5)', padding: '4px 10px', borderRadius: 20 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FDE047' }} /> Store Hubs</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3B82F6' }} /> Active Vans</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} /> Customer Stops</span>
+                  </div>
                 </div>
               </div>
 

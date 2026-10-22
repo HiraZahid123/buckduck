@@ -34,12 +34,17 @@ interface CartContextType {
   serviceFeeCents: number;
   storeCount: number;
   storesGrouped: { [storeId: number]: { store: any; items: CartItem[]; subtotal: number; bags: number } };
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  toggleDrawer: () => void;
 }
 
 const CartContext = createContext<CartContextType>({} as CartContextType);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -71,6 +76,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       newItems = [...items, { product, qty }];
     }
     saveCart(newItems);
+    setIsDrawerOpen(true);
   };
 
   const updateQty = (productId: number, qty: number) => {
@@ -90,6 +96,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const clearCart = () => {
     saveCart([]);
   };
+
+  const openDrawer = () => setIsDrawerOpen(true);
+  const closeDrawer = () => setIsDrawerOpen(false);
+  const toggleDrawer = () => setIsDrawerOpen((prev) => !prev);
 
   // Group by store and compute totals
   const storesGrouped: { [storeId: number]: { store: any; items: CartItem[]; subtotal: number; bags: number } } = {};
@@ -139,6 +149,10 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         serviceFeeCents,
         storeCount,
         storesGrouped,
+        isDrawerOpen,
+        openDrawer,
+        closeDrawer,
+        toggleDrawer,
       }}
     >
       {children}

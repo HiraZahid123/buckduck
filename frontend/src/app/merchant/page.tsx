@@ -50,21 +50,53 @@ export default function MerchantPortalPage() {
     emoji: '🌍',
   });
 
-  // Audio Chime
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [chimeFeedback, setChimeFeedback] = useState('');
+
+  // 3-Stage Kitchen Order Audio Chime (C5 -> E5 -> G5)
   const playChime = () => {
     try {
+      setChimeFeedback('Playing...');
+      setTimeout(() => setChimeFeedback(''), 1200);
+
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.15);
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.6);
+      const now = audioCtx.currentTime;
+
+      // Note 1: C5 (523.25 Hz)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(523.25, now);
+      gain1.gain.setValueAtTime(0.4, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+
+      // Note 2: E5 (659.25 Hz)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(659.25, now + 0.12);
+      gain2.gain.setValueAtTime(0.4, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.5);
+
+      // Note 3: G5 (783.99 Hz)
+      const osc3 = audioCtx.createOscillator();
+      const gain3 = audioCtx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(783.99, now + 0.25);
+      gain3.gain.setValueAtTime(0.5, now + 0.25);
+      gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+      osc3.connect(gain3);
+      gain3.connect(audioCtx.destination);
+      osc3.start(now + 0.25);
+      osc3.stop(now + 0.85);
     } catch {
       // interaction blocked
     }
@@ -299,12 +331,63 @@ export default function MerchantPortalPage() {
             </div>
           </div>
 
-          <div className="row" style={{ gap: 10 }}>
-            <button className="btn btn-sm btn-ghost" onClick={playChime}>
-              🔔 Chime
-            </button>
+          <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+            {/* Audio Alert Status & Test Chime */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                background: 'rgba(255,255,255,0.08)',
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setAudioEnabled(!audioEnabled)}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  color: '#fff',
+                  font: 'inherit',
+                }}
+                title="Toggle audio alert"
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: audioEnabled ? '#22c55e' : '#94a3b8',
+                    display: 'inline-block',
+                    boxShadow: audioEnabled ? '0 0 8px #22c55e' : 'none',
+                  }}
+                />
+                <span className="tiny strong">
+                  {audioEnabled ? 'Audio Alerts: ON' : 'Audio: MUTED'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-sm btn-gold"
+                style={{ padding: '2px 8px', fontSize: 11, marginLeft: 4 }}
+                onClick={playChime}
+                title="Test order notification chime"
+              >
+                🔊 {chimeFeedback || 'Test Chime'}
+              </button>
+            </div>
+
             <span className="badge b-gold hide-sm">
-              🚚 Next: Saturday, Feb 21
+              🚚 Next: Saturday, Oct 24
             </span>
             <Link href="/" className="btn btn-ghost btn-sm">
               Marketplace

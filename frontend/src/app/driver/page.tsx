@@ -19,7 +19,19 @@ export default function DriverAppPage() {
   // Deliver modal
   const [deliverModalOrder, setDeliverModalOrder] = useState<any>(null);
   const [proofNote, setProofNote] = useState('Handed to customer');
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<Record<number, boolean>>({});
+
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     if (!user || user.role !== 'driver') {
@@ -110,11 +122,12 @@ export default function DriverAppPage() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           note: proofNote,
-          photoUrl: 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400',
+          photoUrl: capturedPhoto || 'https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400',
         }),
       });
       if (res.ok) {
         setDeliverModalOrder(null);
+        setCapturedPhoto(null);
         await loadDriverData();
       }
     } catch {
@@ -468,16 +481,27 @@ export default function DriverAppPage() {
                       <div className="grow">
                         <div className="strong">{stop.stores?.name || 'Store'}</div>
                         <div className="tiny muted">{saddr}</div>
+                        <div className="row wrap mt8" style={{ gap: 6 }}>
+                          <a
+                            className="btn btn-sm btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(saddr)}`}
+                          >
+                            🗺️ Google Maps
+                          </a>
+                          <a
+                            className="btn btn-sm btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`https://maps.apple.com/?daddr=${encodeURIComponent(saddr)}`}
+                          >
+                            🧭 Apple Maps
+                          </a>
+                        </div>
                       </div>
-                      <a
-                        className="btn btn-ghost btn-sm"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(saddr)}`}
-                        aria-label="Navigate to store"
-                      >
-                        🧭
-                      </a>
                     </div>
 
                     {/* Customer drop leg */}
@@ -489,23 +513,55 @@ export default function DriverAppPage() {
                           {caddr}
                           {stop.address_line2 ? ` · ${stop.address_line2}` : ''}
                         </div>
-                        {stop.notes && <div className="tiny" style={{ marginTop: 2 }}>📝 {stop.notes}</div>}
-                      </div>
-                      <div className="row" style={{ gap: 6 }}>
-                        {stop.phone && (
-                          <a className="btn btn-ghost btn-sm" href={`tel:${stop.phone}`} aria-label="Call">
-                            📞
+                        {stop.notes && <div className="tiny strong" style={{ marginTop: 4, color: 'var(--amber, #d97706)' }}>📝 {stop.notes}</div>}
+                        
+                        <div className="row wrap mt8" style={{ gap: 6 }}>
+                          {stop.phone && (
+                            <>
+                              <a
+                                className="btn btn-sm btn-primary"
+                                style={{ padding: '3px 8px', fontSize: 11 }}
+                                href={`tel:${stop.phone}`}
+                              >
+                                📞 Call ({stop.phone})
+                              </a>
+                              <a
+                                className="btn btn-sm btn-gold"
+                                style={{ padding: '3px 8px', fontSize: 11 }}
+                                href={`sms:${stop.phone}?&body=${encodeURIComponent("Hi " + (stop.users_orders_customer_idTousers?.name?.split(' ')[0] || 'there') + ", this is your BuckDuck driver! I have arrived with your Saturday grocery delivery from " + (stop.stores?.name || 'your local grocer') + ".")}`}
+                              >
+                                💬 SMS Arrival
+                              </a>
+                            </>
+                          )}
+                          <a
+                            className="btn btn-sm btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(caddr)}`}
+                          >
+                            🗺️ Google Maps
                           </a>
-                        )}
-                        <a
-                          className="btn btn-ghost btn-sm"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(caddr)}`}
-                          aria-label="Navigate to customer"
-                        >
-                          🧭
-                        </a>
+                          <a
+                            className="btn btn-sm btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`https://maps.apple.com/?daddr=${encodeURIComponent(caddr)}`}
+                          >
+                            🧭 Apple Maps
+                          </a>
+                          <a
+                            className="btn btn-sm btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href={`https://waze.com/ul?q=${encodeURIComponent(caddr)}`}
+                          >
+                            🚗 Waze
+                          </a>
+                        </div>
                       </div>
                     </div>
 
@@ -702,10 +758,88 @@ export default function DriverAppPage() {
                   </select>
                 </label>
 
-                <div style={{ border: '2px dashed var(--line-2)', borderRadius: 12, padding: 20, textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>📸</div>
-                  <strong>Photo of delivered bags</strong>
-                  <div className="tiny muted">BuckDuck delivery bag confirmed on porch</div>
+                {/* 3.c: Camera Capture UI with Live Image Preview */}
+                <div style={{ border: '2px dashed var(--line-2)', borderRadius: 12, padding: 16, textAlign: 'center', background: '#fafbfe' }}>
+                  {capturedPhoto ? (
+                    <div>
+                      <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', marginBottom: 10 }}>
+                        <img
+                          src={capturedPhoto}
+                          alt="Delivery drop-off proof"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: 200,
+                            borderRadius: 10,
+                            objectFit: 'cover',
+                            border: '2px solid #22c55e',
+                            display: 'block',
+                          }}
+                        />
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            background: 'rgba(0,0,0,0.8)',
+                            color: '#86efac',
+                            fontSize: 11,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontWeight: 700,
+                          }}
+                        >
+                          ✓ Photo Verified
+                        </span>
+                      </div>
+                      <div className="row center" style={{ gap: 10, justifyContent: 'center' }}>
+                        <label
+                          htmlFor="driver-camera-input"
+                          className="btn btn-sm btn-ghost"
+                          style={{ cursor: 'pointer', fontSize: 12 }}
+                        >
+                          🔄 Retake Photo
+                        </label>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: 36, marginBottom: 8 }}>📸</div>
+                      <strong style={{ display: 'block', marginBottom: 4 }}>Capture Proof of Delivery</strong>
+                      <div className="tiny muted" style={{ marginBottom: 12 }}>
+                        Snap a photo of the sealed BuckDuck bags at front door / drop location.
+                      </div>
+
+                      <div className="row center wrap" style={{ gap: 8, justifyContent: 'center' }}>
+                        <label
+                          htmlFor="driver-camera-input"
+                          className="btn btn-sm btn-primary"
+                          style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                          📷 Open Camera / Upload
+                        </label>
+
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-ghost"
+                          style={{ fontSize: 11 }}
+                          onClick={() =>
+                            setCapturedPhoto('https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=500')
+                          }
+                        >
+                          🖼️ Use Verified Sample
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    id="driver-camera-input"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={handlePhotoCapture}
+                  />
                 </div>
               </div>
 

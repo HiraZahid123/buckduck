@@ -286,10 +286,57 @@ export default function CartCheckoutPage() {
                   Driver Drop-off Notes (Gate code, porch, etc.)
                   <input
                     className="input"
+                    placeholder="e.g. Leave on the front porch, gate code #1234"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                 </label>
+                
+                {/* 1-Tap Quick Delivery Instruction Chips */}
+                <div style={{ marginTop: 8 }}>
+                  <div className="tiny muted strong" style={{ marginBottom: 6 }}>Quick instructions:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {[
+                      { emoji: '🚪', text: 'Leave at front door' },
+                      { emoji: '📦', text: 'Leave on the front porch' },
+                      { emoji: '🔔', text: 'Ring doorbell upon arrival' },
+                      { emoji: '🏢', text: 'Leave with concierge' },
+                      { emoji: '📞', text: 'Call me upon arrival' },
+                    ].map((chip) => {
+                      const isActive = notes.includes(chip.text);
+                      return (
+                        <button
+                          key={chip.text}
+                          type="button"
+                          onClick={() => {
+                            if (isActive) {
+                              setNotes(notes.replace(chip.text, '').replace(/^,\s*|,\s*$/g, '').trim());
+                            } else {
+                              setNotes(notes ? `${notes.trim()}, ${chip.text}` : chip.text);
+                            }
+                          }}
+                          style={{
+                            background: isActive ? 'var(--navy-950, #0B1F4B)' : '#F1F5F9',
+                            color: isActive ? '#FFFFFF' : 'var(--ink, #0B1F4B)',
+                            border: `1px solid ${isActive ? 'var(--navy-950, #0B1F4B)' : '#E2E8F0'}`,
+                            borderRadius: 16,
+                            padding: '4px 10px',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span>{chip.emoji}</span>
+                          <span>{chip.text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

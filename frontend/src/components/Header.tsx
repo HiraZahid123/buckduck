@@ -11,7 +11,7 @@ const searchCache = new Map<string, any[]>();
 
 export default function Header() {
   const { user, logout } = useAuth();
-  const { itemCount, addToCart } = useCart();
+  const { itemCount, addToCart, openDrawer } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -461,7 +461,24 @@ export default function Header() {
 
             {accountLink}
 
-            <Link href="/cart" className="nav-link cart-btn" aria-label="Cart">
+            <button
+              type="button"
+              className="nav-link cart-btn"
+              aria-label="View Shopping Cart"
+              onClick={openDrawer}
+              style={{
+                background: 'none',
+                border: 0,
+                cursor: 'pointer',
+                font: 'inherit',
+                color: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 10px',
+                borderRadius: 8,
+              }}
+            >
               <svg
                 width="20"
                 height="20"
@@ -476,7 +493,7 @@ export default function Header() {
               </svg>
               <span className="lbl">Cart</span>
               {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
-            </Link>
+            </button>
           </nav>
         </div>
       </header>
