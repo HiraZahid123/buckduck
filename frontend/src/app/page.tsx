@@ -32,6 +32,14 @@ interface DeliveryWindow {
   open?: boolean;
 }
 
+interface ServiceZipItem {
+  zip: string;
+  city: string;
+  state: string;
+  zone: string;
+  active: boolean;
+}
+
 export default function HomePage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -40,13 +48,14 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [zipInput, setZipInput] = useState('');
   const [zipStatus, setZipStatus] = useState<{ checked: boolean; valid: boolean; message: string } | null>(null);
+  const [serviceZips, setServiceZips] = useState<ServiceZipItem[]>([]);
 
   const handleCheckZip = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanZip = zipInput.trim();
     if (!cleanZip) return;
 
-    const supportedZips: Record<string, string> = {
+    const defaultSupportedZips: Record<string, string> = {
       '20910': 'Downtown Silver Spring, MD',
       '20901': 'Silver Spring / Four Corners, MD',
       '20902': 'Wheaton / Silver Spring, MD',
@@ -61,12 +70,24 @@ export default function HomePage() {
       '20012': 'Takoma, DC',
     };
 
-    if (supportedZips[cleanZip] || cleanZip.startsWith('209') || cleanZip.startsWith('208')) {
-      const area = supportedZips[cleanZip] || 'Silver Spring & Montgomery County, MD';
+    let matchedArea = '';
+
+    if (serviceZips.length > 0) {
+      const match = serviceZips.find((z) => z.zip === cleanZip && z.active);
+      if (match) {
+        matchedArea = `${match.zone || match.city}, ${match.state}`;
+      }
+    } else {
+      if (defaultSupportedZips[cleanZip] || cleanZip.startsWith('209') || cleanZip.startsWith('208')) {
+        matchedArea = defaultSupportedZips[cleanZip] || 'Silver Spring & Montgomery County, MD';
+      }
+    }
+
+    if (matchedArea) {
       setZipStatus({
         checked: true,
         valid: true,
-        message: `🎉 Great news! We deliver to ${area} (${cleanZip}) every Saturday!`,
+        message: `🎉 Great news! We deliver to ${matchedArea} (${cleanZip}) every Saturday!`,
       });
       try {
         localStorage.setItem('bd_zip', cleanZip);
@@ -75,7 +96,7 @@ export default function HomePage() {
       setZipStatus({
         checked: true,
         valid: false,
-        message: `📍 ${cleanZip} is outside our current Saturday pilot zone (Silver Spring & Montgomery County, MD). Expanding soon!`,
+        message: `📍 ${cleanZip} is outside our current Saturday delivery zones. We are expanding soon!`,
       });
     }
   };
@@ -83,10 +104,11 @@ export default function HomePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [storesRes, catsRes, winsRes] = await Promise.all([
+        const [storesRes, catsRes, winsRes, setRes] = await Promise.all([
           fetch('/api/stores'),
           fetch('/api/stores/categories'),
           fetch('/api/windows'),
+          fetch('/api/settings').catch(() => null),
         ]);
 
         if (storesRes.ok) {
@@ -100,6 +122,17 @@ export default function HomePage() {
         if (winsRes.ok) {
           const w = await winsRes.json();
           setWindows(w);
+        }
+        if (setRes && setRes.ok) {
+          const st = await setRes.json();
+          if (st.service_zip_codes) {
+            try {
+              const parsed = JSON.parse(st.service_zip_codes);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setServiceZips(parsed);
+              }
+            } catch {}
+          }
         }
       } catch (err) {
         console.error('Failed to load home data', err);

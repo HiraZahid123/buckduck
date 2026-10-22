@@ -6,10 +6,33 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
 
+export interface ServiceZip {
+  zip: string;
+  city: string;
+  state: string;
+  zone: string;
+  active: boolean;
+}
+
+const DEFAULT_ZIPS: ServiceZip[] = [
+  { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
+  { zip: '20901', city: 'Silver Spring', state: 'MD', zone: 'Four Corners / Burnt Mills', active: true },
+  { zip: '20902', city: 'Silver Spring', state: 'MD', zone: 'Wheaton / Glenmont', active: true },
+  { zip: '20903', city: 'Silver Spring', state: 'MD', zone: 'Hillandale', active: true },
+  { zip: '20904', city: 'Silver Spring', state: 'MD', zone: 'White Oak / Colesville', active: true },
+  { zip: '20905', city: 'Silver Spring', state: 'MD', zone: 'Cloverly', active: true },
+  { zip: '20906', city: 'Silver Spring', state: 'MD', zone: 'Aspen Hill / Layhill', active: true },
+  { zip: '20912', city: 'Takoma Park', state: 'MD', zone: 'Takoma Park Old Town', active: true },
+  { zip: '20850', city: 'Rockville', state: 'MD', zone: 'Rockville Town Center', active: true },
+  { zip: '20852', city: 'North Bethesda', state: 'MD', zone: 'Pike & Rose / White Flint', active: true },
+  { zip: '20011', city: 'Washington', state: 'DC', zone: 'Petworth / Brightwood', active: true },
+  { zip: '20012', city: 'Washington', state: 'DC', zone: 'Takoma DC', active: true },
+];
+
 export default function AdminConsolePage() {
   const router = useRouter();
   const { user, demoLogin, logout } = useAuth();
-  const [subView, setSubView] = useState<'overview' | 'dispatch' | 'orders' | 'stores' | 'users' | 'drivers' | 'windows' | 'finance' | 'settings'>('overview');
+  const [subView, setSubView] = useState<'overview' | 'dispatch' | 'orders' | 'stores' | 'users' | 'drivers' | 'windows' | 'zones' | 'finance' | 'settings'>('overview');
   const [overview, setOverview] = useState<any>(null);
   const [orders, setOrders] = useState<any[]>([]);
   const [dispatch, setDispatch] = useState<any>(null);
@@ -22,6 +45,17 @@ export default function AdminConsolePage() {
   const [userRoleFilter, setUserRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedMapPin, setSelectedMapPin] = useState<any>(null);
+
+  // ZIP Code & Zone Management states
+  const [zipList, setZipList] = useState<ServiceZip[]>(DEFAULT_ZIPS);
+  const [newZip, setNewZip] = useState('');
+  const [newCity, setNewCity] = useState('');
+  const [newState, setNewState] = useState('MD');
+  const [newZone, setNewZone] = useState('');
+  const [zipSearch, setZipSearch] = useState('');
+  const [stateFilter, setStateFilter] = useState('All');
+  const [zipFeedback, setZipFeedback] = useState('');
+  const [isSavingZip, setIsSavingZip] = useState(false);
 
   // Order modal (39-admin-order-modal.png)
   const [modalOrder, setModalOrder] = useState<any>(null);
@@ -69,6 +103,126 @@ export default function AdminConsolePage() {
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Synchronize ZIP codes from backend settings
+  useEffect(() => {
+    if (settings && settings.service_zip_codes) {
+      try {
+        const parsed = JSON.parse(settings.service_zip_codes);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setZipList(parsed);
+        }
+      } catch {}
+    }
+  }, [settings]);
+
+  const saveZipsToBackend = async (updatedList: ServiceZip[]) => {
+    setZipList(updatedList);
+    setIsSavingZip(true);
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          key: 'service_zip_codes',
+          value: JSON.stringify(updatedList),
+        }),
+      });
+      if (res.ok) {
+        setZipFeedback('✓ Service ZIPs saved and active on live marketplace!');
+        setTimeout(() => setZipFeedback(''), 3000);
+      }
+    } catch {
+      setZipFeedback('⚠️ Failed to save settings');
+    } finally {
+      setIsSavingZip(false);
+    }
+  };
+
+  const handleAddZip = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanZip = newZip.trim();
+    if (!cleanZip || cleanZip.length !== 5 || isNaN(Number(cleanZip))) {
+      alert('Please enter a valid 5-digit US ZIP code.');
+      return;
+    }
+    if (zipList.some((z) => z.zip === cleanZip)) {
+      alert(`ZIP code ${cleanZip} is already registered in service zones.`);
+      return;
+    }
+
+    const newItem: ServiceZip = {
+      zip: cleanZip,
+      city: newCity.trim() || (cleanZip.startsWith('200') ? 'Washington' : 'Silver Spring'),
+      state: newState,
+      zone: newZone.trim() || `${newCity.trim() || 'Service'} Zone`,
+      active: true,
+    };
+
+    const updated = [newItem, ...zipList];
+    saveZipsToBackend(updated);
+    setNewZip('');
+    setNewCity('');
+    setNewZone('');
+  };
+
+  const handleToggleZip = (zipStr: string) => {
+    const updated = zipList.map((z) =>
+      z.zip === zipStr ? { ...z, active: !z.active } : z
+    );
+    saveZipsToBackend(updated);
+  };
+
+  const handleDeleteZip = (zipStr: string) => {
+    if (!confirm(`Are you sure you want to remove ZIP ${zipStr} from Saturday delivery?`)) return;
+    const updated = zipList.filter((z) => z.zip !== zipStr);
+    saveZipsToBackend(updated);
+  };
+
+  const handleAddPresetZone = (zoneKey: string) => {
+    let presets: ServiceZip[] = [];
+    if (zoneKey === 'silver-spring') {
+      presets = [
+        { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
+        { zip: '20901', city: 'Silver Spring', state: 'MD', zone: 'Four Corners', active: true },
+        { zip: '20902', city: 'Silver Spring', state: 'MD', zone: 'Wheaton / Glenmont', active: true },
+        { zip: '20903', city: 'Silver Spring', state: 'MD', zone: 'Hillandale', active: true },
+        { zip: '20904', city: 'Silver Spring', state: 'MD', zone: 'White Oak / Colesville', active: true },
+        { zip: '20905', city: 'Silver Spring', state: 'MD', zone: 'Cloverly', active: true },
+        { zip: '20906', city: 'Silver Spring', state: 'MD', zone: 'Aspen Hill / Layhill', active: true },
+        { zip: '20912', city: 'Takoma Park', state: 'MD', zone: 'Takoma Park Old Town', active: true },
+      ];
+    } else if (zoneKey === 'rockville') {
+      presets = [
+        { zip: '20850', city: 'Rockville', state: 'MD', zone: 'Rockville Town Center', active: true },
+        { zip: '20852', city: 'North Bethesda', state: 'MD', zone: 'Pike & Rose / White Flint', active: true },
+        { zip: '20814', city: 'Bethesda', state: 'MD', zone: 'Downtown Bethesda', active: true },
+        { zip: '20817', city: 'Bethesda', state: 'MD', zone: 'Cabin John / West Bethesda', active: true },
+      ];
+    } else if (zoneKey === 'dc') {
+      presets = [
+        { zip: '20011', city: 'Washington', state: 'DC', zone: 'Petworth / Brightwood', active: true },
+        { zip: '20012', city: 'Washington', state: 'DC', zone: 'Takoma DC', active: true },
+        { zip: '20010', city: 'Washington', state: 'DC', zone: 'Columbia Heights / Park View', active: true },
+      ];
+    } else if (zoneKey === 'nova') {
+      presets = [
+        { zip: '22201', city: 'Arlington', state: 'VA', zone: 'Clarendon / Courthouse', active: true },
+        { zip: '22301', city: 'Alexandria', state: 'VA', zone: 'Del Ray / Old Town North', active: true },
+      ];
+    }
+
+    const currentMap = new Map(zipList.map((z) => [z.zip, z]));
+    for (const p of presets) {
+      currentMap.set(p.zip, p);
+    }
+    const updated = Array.from(currentMap.values());
+    saveZipsToBackend(updated);
+  };
 
   const handleAssignDriver = async (orderId: number, driverId: number) => {
     const token = localStorage.getItem('bd_token');
@@ -230,6 +384,18 @@ export default function AdminConsolePage() {
         </button>
 
         <button
+          className={`side-link ${subView === 'zones' ? 'active' : ''}`}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          onClick={() => setSubView('zones')}
+        >
+          <span>📍</span>
+          <span>Service zones & ZIPs</span>
+          <span className="cnt" style={{ background: 'var(--gold-metal)', color: 'var(--navy-950)', fontWeight: 700 }}>
+            {zipList.filter((z) => z.active).length}
+          </span>
+        </button>
+
+        <button
           className={`side-link ${subView === 'finance' ? 'active' : ''}`}
           style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
           onClick={() => setSubView('finance')}
@@ -281,6 +447,7 @@ export default function AdminConsolePage() {
               {subView === 'users' && 'Users'}
               {subView === 'drivers' && 'Drivers'}
               {subView === 'windows' && 'Delivery windows'}
+              {subView === 'zones' && 'Service zones & delivery ZIPs'}
               {subView === 'finance' && 'Finance'}
               {subView === 'settings' && 'Settings'}
             </div>
@@ -981,42 +1148,421 @@ export default function AdminConsolePage() {
             </div>
           )}
 
+          {/* SCREEN: SERVICE ZONES & ZIP CODES */}
+          {subView === 'zones' && (
+            <div className="stack" style={{ gap: 20 }}>
+              <div className="page-h">
+                <div>
+                  <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                    <span style={{ fontSize: 24 }}>📍</span>
+                    <h1 style={{ margin: 0 }}>Service zones & delivery ZIP codes</h1>
+                  </div>
+                  <p style={{ marginTop: 6, color: 'var(--muted)' }}>
+                    Activate new neighborhoods across Maryland, Washington DC, and Northern Virginia for Saturday delivery.
+                    Changes sync immediately to customer address validation and driver dispatch.
+                  </p>
+                </div>
+                <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+                  <span className="badge b-gold" style={{ padding: '6px 12px', fontSize: 13, fontWeight: 700 }}>
+                    ✓ {zipList.filter((z) => z.active).length} Active ZIP Codes
+                  </span>
+                  {isSavingZip ? (
+                    <span className="badge b-gray" style={{ padding: '6px 10px', fontSize: 12 }}>
+                      🔄 Syncing with DB...
+                    </span>
+                  ) : (
+                    <span className="badge b-green" style={{ padding: '6px 10px', fontSize: 12 }}>
+                      ● Database synced
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {zipFeedback && (
+                <div
+                  className="alert"
+                  style={{
+                    background: zipFeedback.startsWith('✓') ? 'rgba(46, 125, 50, 0.12)' : 'rgba(198, 40, 40, 0.12)',
+                    color: zipFeedback.startsWith('✓') ? '#2e7d32' : '#c62828',
+                    border: `1px solid ${zipFeedback.startsWith('✓') ? '#2e7d32' : '#c62828'}`,
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    fontWeight: 600,
+                  }}
+                >
+                  {zipFeedback}
+                </div>
+              )}
+
+              {/* 1-Click Zone Quick-Add Presets */}
+              <div className="card" style={{ background: 'var(--surface-2)', border: '1px dashed var(--gold-metal)', padding: 16 }}>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                  <div>
+                    <div className="strong" style={{ fontSize: 14 }}>🚀 1-Click Expansion Presets</div>
+                    <div className="tiny muted">Quickly bulk-activate all ZIP codes for core Saturday delivery clusters:</div>
+                  </div>
+                  <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleAddPresetZone('silver-spring')}
+                      title="Activate 8 ZIP codes in Silver Spring & Takoma Park"
+                    >
+                      + Silver Spring Core (8 ZIPs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleAddPresetZone('rockville')}
+                      title="Activate Bethesda, North Bethesda, and Rockville"
+                    >
+                      + Bethesda & Rockville (4 ZIPs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleAddPresetZone('dc')}
+                      title="Activate Petworth, Takoma DC, and Columbia Heights"
+                    >
+                      + DC Upper NW (3 ZIPs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleAddPresetZone('nova')}
+                      title="Activate Arlington & Alexandria, VA"
+                    >
+                      + Arlington & Alexandria, VA (2 ZIPs)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* ADD ZIP CODE FORM */}
+              <div className="card" style={{ padding: 20 }}>
+                <div className="card-h" style={{ marginBottom: 16 }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 16 }}>➕ Add new service ZIP code</h3>
+                    <p className="tiny muted" style={{ margin: '4px 0 0' }}>
+                      Register an individual ZIP code to open customer orders and driver routes in that area.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddZip}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: 12,
+                      alignItems: 'flex-end',
+                    }}
+                  >
+                    <div>
+                      <label className="tiny strong muted" style={{ display: 'block', marginBottom: 6 }}>
+                        5-DIGIT ZIP CODE *
+                      </label>
+                      <input
+                        className="input"
+                        placeholder="e.g. 20910"
+                        maxLength={5}
+                        value={newZip}
+                        onChange={(e) => setNewZip(e.target.value.replace(/\D/g, ''))}
+                        required
+                        style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 700, letterSpacing: 1 }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="tiny strong muted" style={{ display: 'block', marginBottom: 6 }}>
+                        CITY / TOWN *
+                      </label>
+                      <input
+                        className="input"
+                        placeholder="e.g. Silver Spring"
+                        value={newCity}
+                        onChange={(e) => setNewCity(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="tiny strong muted" style={{ display: 'block', marginBottom: 6 }}>
+                        STATE / JURISDICTION
+                      </label>
+                      <select
+                        className="input"
+                        value={newState}
+                        onChange={(e) => setNewState(e.target.value)}
+                      >
+                        <option value="MD">MD (Maryland)</option>
+                        <option value="DC">DC (District of Columbia)</option>
+                        <option value="VA">VA (Virginia)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="tiny strong muted" style={{ display: 'block', marginBottom: 6 }}>
+                        ZONE / NEIGHBORHOOD NAME
+                      </label>
+                      <input
+                        className="input"
+                        placeholder="e.g. Downtown / Arts District"
+                        value={newZone}
+                        onChange={(e) => setNewZone(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={isSavingZip || newZip.trim().length !== 5}
+                        style={{ width: '100%', height: 42, fontWeight: 700 }}
+                      >
+                        {isSavingZip ? 'Saving...' : '✓ Add Service ZIP'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              {/* SEARCH & DIRECTORY TABLE */}
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    padding: '14px 20px',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 12,
+                    background: 'var(--surface-2)',
+                  }}
+                >
+                  <div className="row" style={{ gap: 10, alignItems: 'center', flex: 1, minWidth: 260 }}>
+                    <span style={{ fontSize: 16 }}>🔍</span>
+                    <input
+                      className="input"
+                      placeholder="Search active ZIP, city, or zone name..."
+                      value={zipSearch}
+                      onChange={(e) => setZipSearch(e.target.value)}
+                      style={{ maxWidth: 320, padding: '6px 12px' }}
+                    />
+                  </div>
+
+                  <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                    <span className="tiny muted strong">Filter by state:</span>
+                    {['All', 'MD', 'DC', 'VA'].map((st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        className={`btn btn-sm ${stateFilter === st ? 'btn-primary' : 'btn-ghost'}`}
+                        onClick={() => setStateFilter(st)}
+                        style={{ padding: '4px 10px', fontSize: 12 }}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="table" style={{ width: '100%', margin: 0 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--surface-1)' }}>
+                        <th style={{ width: 120 }}>ZIP Code</th>
+                        <th>City / Town</th>
+                        <th style={{ width: 80 }}>State</th>
+                        <th>Delivery Zone / Cluster</th>
+                        <th>Delivery Window</th>
+                        <th style={{ width: 140, textAlign: 'center' }}>Status</th>
+                        <th style={{ width: 90, textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {zipList
+                        .filter((item) => {
+                          const matchesState = stateFilter === 'All' || item.state === stateFilter;
+                          const q = zipSearch.toLowerCase();
+                          const matchesSearch =
+                            !q ||
+                            item.zip.toLowerCase().includes(q) ||
+                            item.city.toLowerCase().includes(q) ||
+                            item.zone.toLowerCase().includes(q);
+                          return matchesState && matchesSearch;
+                        })
+                        .map((item) => (
+                          <tr key={item.zip} style={{ opacity: item.active ? 1 : 0.65 }}>
+                            <td>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  fontFamily: 'monospace',
+                                  fontWeight: 800,
+                                  fontSize: 14,
+                                  background: item.active ? 'var(--gold-metal)' : 'var(--surface-2)',
+                                  color: item.active ? 'var(--navy-950)' : 'var(--muted)',
+                                  padding: '3px 8px',
+                                  borderRadius: 4,
+                                  border: '1px solid rgba(0,0,0,0.1)',
+                                }}
+                              >
+                                {item.zip}
+                              </span>
+                            </td>
+                            <td>
+                              <strong>{item.city}</strong>
+                            </td>
+                            <td>
+                              <span className="badge b-gray" style={{ fontWeight: 700 }}>
+                                {item.state}
+                              </span>
+                            </td>
+                            <td style={{ color: 'var(--text-1)' }}>
+                              {item.zone}
+                            </td>
+                            <td>
+                              <span className="tiny muted">
+                                📅 Every Saturday · 9 AM – 4 PM
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleZip(item.zip)}
+                                title={item.active ? 'Click to pause this ZIP' : 'Click to activate this ZIP'}
+                                style={{
+                                  cursor: 'pointer',
+                                  border: 'none',
+                                  background: item.active ? 'rgba(46, 125, 50, 0.15)' : 'rgba(211, 47, 47, 0.12)',
+                                  color: item.active ? '#2e7d32' : '#d32f2f',
+                                  padding: '5px 12px',
+                                  borderRadius: 20,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  transition: 'all 0.2s ease',
+                                }}
+                              >
+                                <span>{item.active ? '● Active' : '○ Paused'}</span>
+                                <span style={{ fontSize: 10, opacity: 0.8 }}>
+                                  ({item.active ? 'Live' : 'Hidden'})
+                                </span>
+                              </button>
+                            </td>
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => handleDeleteZip(item.zip)}
+                                title="Remove ZIP from service area"
+                                style={{ color: 'var(--red, #e53935)', padding: '4px 8px' }}
+                              >
+                                🗑️ Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      {zipList.length === 0 && (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--muted)' }}>
+                            No service ZIP codes found. Use the form above or presets to activate zones.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div
+                  style={{
+                    padding: '12px 20px',
+                    borderTop: '1px solid var(--border)',
+                    background: 'var(--surface-1)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span className="tiny muted">
+                    Showing {zipList.filter((z) => z.active).length} active of {zipList.length} total registered ZIP codes
+                  </span>
+                  <span className="tiny muted">
+                    Neon DB settings key: <code>service_zip_codes</code>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* SCREEN 9: SETTINGS (38-admin-settings.png) */}
           {subView === 'settings' && (
-            <div className="card" style={{ maxWidth: 640 }}>
-              <h3>Marketplace settings</h3>
-              <p className="small muted">Changes apply immediately to all upcoming orders.</p>
+            <div className="stack" style={{ gap: 20, maxWidth: 680 }}>
+              <div className="card">
+                <h3>Marketplace settings</h3>
+                <p className="small muted">Changes apply immediately to all upcoming orders and payouts.</p>
 
-              <div className="form-grid" style={{ marginTop: 16 }}>
-                <label className="field span3">
-                  Delivery fee per store (cents)
-                  <input className="input" defaultValue="599" />
-                  <span className="tiny muted">e.g. 599 = $5.99</span>
-                </label>
-                <label className="field span3">
-                  Service fee rate
-                  <input className="input" defaultValue="0.05" />
-                  <span className="tiny muted">0.05 = 5% of items</span>
-                </label>
-                <label className="field span3">
-                  Driver base pay / stop (cents)
-                  <input className="input" defaultValue="550" />
-                  <span className="tiny muted">Drivers keep 100% of tips</span>
-                </label>
-                <label className="field span3">
-                  Default store commission
-                  <input className="input" defaultValue="0.15" />
-                  <span className="tiny muted">0.15 = 15%</span>
-                </label>
-                <label className="field span6">
-                  Service Area ZIP Codes
-                  <input className="input" defaultValue="20910, 20901, 20902, 20904, 20906" />
-                  <span className="tiny muted">Silver Spring, MD & DC Metro Area</span>
-                </label>
-                <div className="span6">
-                  <button className="btn btn-primary" onClick={() => alert('Settings saved successfully')}>
-                    Save settings
-                  </button>
+                <div className="form-grid" style={{ marginTop: 16 }}>
+                  <label className="field span3">
+                    Delivery fee per store (cents)
+                    <input className="input" defaultValue="599" />
+                    <span className="tiny muted">e.g. 599 = $5.99</span>
+                  </label>
+                  <label className="field span3">
+                    Service fee rate
+                    <input className="input" defaultValue="0.05" />
+                    <span className="tiny muted">0.05 = 5% of items</span>
+                  </label>
+                  <label className="field span3">
+                    Driver base pay / stop (cents)
+                    <input className="input" defaultValue="550" />
+                    <span className="tiny muted">Drivers keep 100% of tips</span>
+                  </label>
+                  <label className="field span3">
+                    Default store commission
+                    <input className="input" defaultValue="0.15" />
+                    <span className="tiny muted">0.15 = 15%</span>
+                  </label>
+
+                  <div className="span6" style={{ marginTop: 8 }}>
+                    <div
+                      style={{
+                        padding: 16,
+                        background: 'var(--surface-2)',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <div className="strong" style={{ fontSize: 14 }}>📍 Service Area & ZIP Codes</div>
+                        <div className="small muted">
+                          Currently serving <strong>{zipList.filter((z) => z.active).length} active ZIP codes</strong> across MD, DC, and VA.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() => setSubView('zones')}
+                      >
+                        Manage Service Zones & ZIPs →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="span6" style={{ marginTop: 12 }}>
+                    <button className="btn btn-primary" onClick={() => alert('Settings saved successfully')}>
+                      Save settings
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
