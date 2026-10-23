@@ -6,6 +6,7 @@ export const getSocket = (): Socket => {
   if (!socket) {
     const wsUrl =
       process.env.NEXT_PUBLIC_WS_URL ||
+      process.env.NEXT_PUBLIC_BACKEND_URL ||
       (typeof window !== 'undefined'
         ? `${window.location.protocol}//${window.location.hostname}:4000`
         : 'http://localhost:4000');
