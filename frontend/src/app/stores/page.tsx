@@ -66,13 +66,7 @@ function StoresContent() {
       </div>
 
       <div className="chips mb16">
-        <button
-          className={`chip ${selectedCategory === 'All' ? 'active' : ''}`}
-          onClick={() => setSelectedCategory('All')}
-        >
-          All
-        </button>
-        {categories.map((c) => (
+        {['All', ...Array.from(new Set(categories.filter((c) => c && c.toLowerCase() !== 'all')))].map((c) => (
           <button
             key={c}
             className={`chip ${selectedCategory.toLowerCase() === c.toLowerCase() ? 'active' : ''}`}

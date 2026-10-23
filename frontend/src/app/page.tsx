@@ -192,16 +192,18 @@ export default function HomePage() {
             <div
               style={{
                 marginTop: 20,
-                padding: '14px 18px',
+                padding: '12px 14px',
                 background: 'rgba(255, 255, 255, 0.08)',
                 borderRadius: 12,
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(8px)',
                 maxWidth: 480,
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             >
-              <form onSubmit={handleCheckZip} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ fontSize: 18 }}>📍</span>
+              <form onSubmit={handleCheckZip} style={{ display: 'flex', gap: 8, alignItems: 'center', width: '100%' }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>📍</span>
                 <input
                   type="text"
                   placeholder="Enter delivery ZIP (e.g. 20910)"
@@ -210,19 +212,22 @@ export default function HomePage() {
                   maxLength={5}
                   style={{
                     flex: 1,
+                    minWidth: 0,
+                    width: '100%',
                     background: 'rgba(255, 255, 255, 0.95)',
                     color: '#0B1F4B',
                     border: 0,
                     borderRadius: 8,
-                    padding: '8px 12px',
+                    padding: '9px 12px',
                     fontSize: 14,
                     fontWeight: 600,
+                    boxSizing: 'border-box',
                   }}
                 />
                 <button
                   type="submit"
                   className="btn btn-sm btn-gold"
-                  style={{ padding: '8px 16px', fontWeight: 700 }}
+                  style={{ padding: '9px 14px', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}
                 >
                   Check ZIP
                 </button>
@@ -268,8 +273,8 @@ export default function HomePage() {
 
           {/* Right Hero Card: Next Delivery Day */}
           <div className="hero-card">
-            <div className="row between">
-              <div>
+            <div className="row between" style={{ alignItems: 'flex-start', gap: 10 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div
                   className="tiny"
                   style={{
@@ -281,11 +286,11 @@ export default function HomePage() {
                 >
                   NEXT DELIVERY DAY
                 </div>
-                <div className="display" style={{ fontSize: 28, marginTop: 2 }}>
+                <div className="display" style={{ fontSize: 'clamp(20px, 5.5vw, 28px)', marginTop: 2, lineHeight: 1.15 }}>
                   Saturday, October 24
                 </div>
               </div>
-              <div style={{ fontSize: 42 }}>🚚</div>
+              <div style={{ fontSize: 34, flexShrink: 0, lineHeight: 1 }}>🚚</div>
             </div>
 
             {nextWindows.map((w, idx) => (
@@ -367,13 +372,7 @@ export default function HomePage() {
 
           {/* Category Chips */}
           <div className="chips mb16">
-            <button
-              className={`chip ${selectedCategory === 'All' ? 'active' : ''}`}
-              onClick={() => setSelectedCategory('All')}
-            >
-              All
-            </button>
-            {categories.map((c) => (
+            {['All', ...Array.from(new Set(categories.filter((c) => c && c.toLowerCase() !== 'all')))].map((c) => (
               <button
                 key={c}
                 className={`chip ${selectedCategory.toLowerCase() === c.toLowerCase() ? 'active' : ''}`}

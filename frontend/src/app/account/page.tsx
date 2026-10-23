@@ -87,7 +87,7 @@ export default function AccountPage() {
       <Link
         key={o.id}
         href={`/order/${o.id}`}
-        className="card flat row between"
+        className="card flat account-order-card"
         style={{
           color: 'inherit',
           textDecoration: 'none',
@@ -95,7 +95,7 @@ export default function AccountPage() {
           cursor: 'pointer',
         }}
       >
-        <div className="row" style={{ gap: 14 }}>
+        <div className="account-order-left" style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
           <div
             style={{
               width: 48,
@@ -111,10 +111,10 @@ export default function AccountPage() {
           >
             {storeEmoji}
           </div>
-          <div>
-            <div className="strong">
-              {storeName}{' '}
-              <span className="muted tiny">
+          <div style={{ minWidth: 0 }}>
+            <div className="strong" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+              <span>{storeName}</span>
+              <span className="muted tiny" style={{ whiteSpace: 'nowrap' }}>
                 {o.number || `BD-${10000 + o.id}`}
               </span>
             </div>
@@ -124,7 +124,7 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <div className="row" style={{ gap: 12 }}>
+        <div className="account-order-right" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           {getStatusBadge(o.status)}
           <span className="strong num" style={{ fontSize: 16 }}>
             {formatMoney(o.total_cents)}

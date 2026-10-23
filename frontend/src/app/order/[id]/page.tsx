@@ -100,12 +100,14 @@ export default function OrderTrackingPage() {
   return (
     <div className="container section">
       {/* Top Bar */}
-      <div className="row between wrap">
+      <div className="row between wrap" style={{ gap: 12, alignItems: 'flex-start' }}>
         <div>
           <Link href="/account" className="small" style={{ color: 'var(--blue-700)' }}>
             ← All orders
           </Link>
-          <h1 className="display mt8 mb0">Order {orderNumber}</h1>
+          <h1 className="display mt8 mb0" style={{ fontSize: 'clamp(24px, 6vw, 36px)', wordBreak: 'break-word' }}>
+            Order {orderNumber}
+          </h1>
           <div className="muted small mt8">
             {storeName} · placed {new Date(order.created_at).toLocaleDateString('en-US', {
               month: 'short',
@@ -117,7 +119,7 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        <span className={`badge ${badgeInfo.cls}`} style={{ fontSize: 13, padding: '4px 12px' }}>
+        <span className={`badge ${badgeInfo.cls}`} style={{ fontSize: 13, padding: '4px 12px', flexShrink: 0 }}>
           {badgeInfo.label}
         </span>
       </div>
@@ -237,7 +239,7 @@ export default function OrderTrackingPage() {
                   <div className="tiny muted">{item.products?.unit || '1 lb'}</div>
                 </div>
                 <span className="muted small">×{item.qty}</span>
-                <span className="num strong" style={{ width: 80 }}>
+                <span className="num strong" style={{ width: 80, textAlign: 'right' }}>
                   {formatMoney(item.price_cents * item.qty)}
                 </span>
               </div>

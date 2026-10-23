@@ -153,34 +153,36 @@ export default function CartCheckoutPage() {
             <div className="stack" style={{ gap: 16 }}>
               {Object.values(storesGrouped).map((group: any) => (
                 <div key={group.store.id} className="card">
-                  <div className="row between" style={{ marginBottom: 12, borderBottom: '1px solid var(--line)', paddingBottom: 10 }}>
-                    <div className="row" style={{ gap: 10 }}>
-                      <span style={{ fontSize: 24 }}>{group.store.emoji || '🏪'}</span>
-                      <div>
+                  <div className="row between wrap" style={{ marginBottom: 12, borderBottom: '1px solid var(--line)', paddingBottom: 10, gap: 10 }}>
+                    <div className="row" style={{ gap: 10, minWidth: 0 }}>
+                      <span style={{ fontSize: 24, flexShrink: 0 }}>{group.store.emoji || '🏪'}</span>
+                      <div style={{ minWidth: 0 }}>
                         <strong style={{ fontSize: 16 }}>{group.store.name}</strong>
                         <div className="tiny muted">
                           Sealed BuckDuck Packaging · Est. {group.bags} Bag(s)
                         </div>
                       </div>
                     </div>
-                    <span className="badge b-gold">${(group.subtotal / 100).toFixed(2)} Subtotal</span>
+                    <span className="badge b-gold" style={{ flexShrink: 0, alignSelf: 'center' }}>
+                      ${(group.subtotal / 100).toFixed(2)} Subtotal
+                    </span>
                   </div>
 
                   {/* Items for this store */}
                   <div className="stack" style={{ gap: 10 }}>
                     {group.items.map((it: any) => (
-                      <div key={it.product.id} className="row between">
-                        <div className="row" style={{ gap: 10 }}>
-                          <span style={{ fontSize: 24 }}>{it.product.emoji || '🛒'}</span>
-                          <div>
-                            <div style={{ fontWeight: 600 }}>{it.product.name}</div>
+                      <div key={it.product.id} className="row between cart-item-row">
+                        <div className="row cart-item-info" style={{ gap: 10, minWidth: 0, flex: 1 }}>
+                          <span style={{ fontSize: 24, flexShrink: 0 }}>{it.product.emoji || '🛒'}</span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, wordBreak: 'break-word' }}>{it.product.name}</div>
                             <div className="tiny muted">
                               ${(it.product.price_cents / 100).toFixed(2)} / {it.product.unit || 'unit'}
                             </div>
                           </div>
                         </div>
 
-                        <div className="row" style={{ gap: 12 }}>
+                        <div className="row cart-item-actions" style={{ gap: 12 }}>
                           <div className="stepper" style={{ height: 32 }}>
                             <button onClick={() => updateQty(it.product.id, it.qty - 1)}>-</button>
                             <span>{it.qty}</span>
