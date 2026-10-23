@@ -337,7 +337,7 @@ export default function Header() {
           </Link>
 
           {/* Search bar with live runtime dropdown (Desktop) */}
-          <div className="search-wrapper" ref={searchWrapperRef}>
+          <div className="search-wrapper desktop-search-bar" ref={searchWrapperRef}>
             <form className="search" onSubmit={handleSearchSubmit} role="search" style={{ width: '100%', margin: 0 }}>
               <svg
                 width="18"

@@ -259,7 +259,7 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
   .mobile-toggle{display:inline-flex} .sticky{position:static} .kanban{grid-template-columns:repeat(4,260px)}
 }
 @media (max-width:640px){
-  .container{padding:0 16px} .nav .container{gap:10px;height:64px} .nav .search{display:none} .nav-link .lbl{display:none}
+  .container{padding:0 16px} .nav .container{gap:10px;height:64px} .nav .search, .nav .search-wrapper, .desktop-search-bar{display:none!important} .nav-link .lbl{display:none}
   .steps,.g2,.g3,.g4{grid-template-columns:1fr} .grid.g4.kpis{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr} .span2,.span3,.span4,.span6{grid-column:span 1}
   .main-body{padding:16px} .main-top{padding:0 16px} .product-grid{grid-template-columns:repeat(2,1fr);gap:10px}
@@ -425,10 +425,24 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
   right: 0;
   width: 100%;
   box-sizing: border-box;
+  max-height: 75vh;
+  overflow-y: auto;
 }
 @media (max-width: 640px) {
-  .nav .search { display: none; }
-  .mobile-search-bar { display: block; }
+  .nav .search,
+  .nav .search-wrapper,
+  .desktop-search-bar,
+  .search-wrapper {
+    display: none !important;
+  }
+  .mobile-search-bar {
+    display: block !important;
+  }
+}
+@media (min-width: 641px) {
+  .mobile-search-bar {
+    display: none !important;
+  }
 }
 
 /* ================= MOBILE UI / UX RESPONSIVENESS FIXES ================= */
