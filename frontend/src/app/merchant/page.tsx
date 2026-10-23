@@ -5,6 +5,21 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import BarChart from '../../components/BarChart';
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Package,
+  Store,
+  DollarSign,
+  ExternalLink,
+  Volume2,
+  VolumeX,
+  LogOut,
+  ShoppingBag,
+  Bell,
+  Power,
+  CheckCircle2,
+} from 'lucide-react';
 
 export default function MerchantPortalPage() {
   const router = useRouter();
@@ -16,6 +31,7 @@ export default function MerchantPortalPage() {
   const [payouts, setPayouts] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isStoreOnline, setIsStoreOnline] = useState(true);
 
   // Ready Dialog
   const [readyOrder, setReadyOrder] = useState<any>(null);
@@ -274,12 +290,23 @@ export default function MerchantPortalPage() {
             <div style={{ width: 40, height: 40, borderRadius: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, overflow: 'hidden', flex: 'none' }}>
               {user?.store?.emoji || '🌍'}
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div className="strong small" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user?.store?.name || 'Accra Market'}
               </div>
-              <div className="tiny" style={{ opacity: 0.7 }}>
-                {user?.store?.status === 'active' ? '● Live' : user?.store?.status === 'pending' ? '◌ Pending approval' : '✕ Suspended'}
+              <div className="tiny" style={{ opacity: 0.85, display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                <span
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: '50%',
+                    background: isStoreOnline ? '#22c55e' : '#ef4444',
+                    boxShadow: isStoreOnline ? '0 0 6px #22c55e' : 'none',
+                    display: 'inline-block',
+                    flex: 'none',
+                  }}
+                />
+                <span>{isStoreOnline ? '● Live on marketplace' : '✕ Store paused'}</span>
               </div>
             </div>
           </div>
@@ -288,19 +315,19 @@ export default function MerchantPortalPage() {
         <div className="side-sec">Menu</div>
         <button
           className={`side-link ${subView === 'dash' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => { setSubView('dash'); setIsSidebarOpen(false); }}
         >
-          <span>📊</span>
+          <LayoutDashboard size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'dash' ? 1 : 0.75 }} />
           <span>Dashboard</span>
         </button>
 
         <button
           className={`side-link ${subView === 'orders' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => { setSubView('orders'); setIsSidebarOpen(false); }}
         >
-          <span>📋</span>
+          <ClipboardList size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'orders' ? 1 : 0.75 }} />
           <span>Orders</span>
           {(newCount + inProgressCount) > 0 && (
             <span className="cnt">{newCount + inProgressCount}</span>
@@ -309,10 +336,10 @@ export default function MerchantPortalPage() {
 
         <button
           className={`side-link ${subView === 'products' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => { setSubView('products'); setIsSidebarOpen(false); }}
         >
-          <span>📦</span>
+          <Package size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'products' ? 1 : 0.75 }} />
           <span>Products</span>
           <span className="cnt" style={{ background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
             {products.length}
@@ -321,19 +348,19 @@ export default function MerchantPortalPage() {
 
         <button
           className={`side-link ${subView === 'store' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => { setSubView('store'); setIsSidebarOpen(false); }}
         >
-          <span>🏪</span>
+          <Store size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'store' ? 1 : 0.75 }} />
           <span>Storefront</span>
         </button>
 
         <button
           className={`side-link ${subView === 'payouts' ? 'active' : ''}`}
-          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left' }}
+          style={{ width: '100%', background: 'none', border: 0, cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12 }}
           onClick={() => { setSubView('payouts'); setIsSidebarOpen(false); }}
         >
-          <span>💵</span>
+          <DollarSign size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: subView === 'payouts' ? 1 : 0.75 }} />
           <span>Payouts</span>
         </button>
 
@@ -341,8 +368,9 @@ export default function MerchantPortalPage() {
         <Link
           className="side-link"
           href={`/stores/${user?.store?.slug || 'accra-market'}`}
+          style={{ display: 'flex', alignItems: 'center', gap: 12 }}
         >
-          <span>🏠</span>
+          <ExternalLink size={18} strokeWidth={2.2} style={{ flex: 'none', opacity: 0.75 }} />
           <span>View my storefront</span>
         </Link>
 
@@ -358,13 +386,14 @@ export default function MerchantPortalPage() {
           </div>
           <button
             className="btn btn-sm btn-block"
-            style={{ background: 'rgba(255,255,255,.08)', color: '#fff' }}
+            style={{ background: 'rgba(255,255,255,.08)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             onClick={() => {
               logout();
               router.push('/login');
             }}
           >
-            Sign out
+            <LogOut size={15} strokeWidth={2.2} />
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
@@ -395,17 +424,53 @@ export default function MerchantPortalPage() {
             </div>
           </div>
 
-          <div className="row" style={{ gap: 10, alignItems: 'center' }}>
+          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+            {/* Store Online / Offline Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsStoreOnline(!isStoreOnline)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 7,
+                padding: '5px 12px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: isStoreOnline ? '1.5px solid #86efac' : '1.5px solid #fca5a5',
+                background: isStoreOnline ? '#f0fdf4' : '#fef2f2',
+                color: isStoreOnline ? '#15803d' : '#b91c1c',
+                transition: 'all 0.2s ease',
+              }}
+              title={isStoreOnline ? 'Store is online & accepting orders (Click to pause)' : 'Store is paused / offline (Click to go online)'}
+            >
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: isStoreOnline ? '#22c55e' : '#ef4444',
+                  boxShadow: isStoreOnline ? '0 0 8px #22c55e' : 'none',
+                  flex: 'none',
+                }}
+              />
+              <span>{isStoreOnline ? 'Online' : 'Offline'}</span>
+              <span className="hide-sm" style={{ fontWeight: 500, opacity: 0.85 }}>
+                {isStoreOnline ? '· Accepting Orders' : '· Paused'}
+              </span>
+            </button>
+
             {/* Audio Alert Status & Test Chime */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                background: 'rgba(255,255,255,0.08)',
-                padding: '4px 10px',
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.12)',
+                gap: 6,
+                background: 'var(--surface-2)',
+                padding: '4px 8px',
+                borderRadius: 20,
+                border: '1px solid var(--line)',
               }}
             >
               <button
@@ -415,45 +480,43 @@ export default function MerchantPortalPage() {
                   background: 'none',
                   border: 0,
                   cursor: 'pointer',
-                  padding: 0,
+                  padding: '2px 4px',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  color: '#fff',
+                  gap: 5,
+                  color: 'var(--ink)',
                   font: 'inherit',
+                  fontSize: 12,
+                  fontWeight: 600,
                 }}
-                title="Toggle audio alert"
+                title={audioEnabled ? 'Audio alerts active (Click to mute)' : 'Audio muted (Click to enable)'}
               >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: audioEnabled ? '#22c55e' : '#94a3b8',
-                    display: 'inline-block',
-                    boxShadow: audioEnabled ? '0 0 8px #22c55e' : 'none',
-                  }}
-                />
-                <span className="tiny strong">
-                  {audioEnabled ? 'Audio Alerts: ON' : 'Audio: MUTED'}
+                {audioEnabled ? (
+                  <Volume2 size={15} style={{ color: '#16a34a', flex: 'none' }} />
+                ) : (
+                  <VolumeX size={15} style={{ color: '#64748b', flex: 'none' }} />
+                )}
+                <span className="hide-sm">
+                  {audioEnabled ? 'Sound On' : 'Muted'}
                 </span>
               </button>
 
               <button
                 type="button"
                 className="btn btn-sm btn-gold"
-                style={{ padding: '2px 8px', fontSize: 11, marginLeft: 4 }}
+                style={{ padding: '3px 8px', fontSize: 11, borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                 onClick={playChime}
                 title="Test order notification chime"
               >
-                🔊 {chimeFeedback || 'Test Chime'}
+                <Bell size={12} />
+                <span>{chimeFeedback || 'Chime'}</span>
               </button>
             </div>
 
             <span className="badge b-gold hide-sm">
               🚚 Next: Saturday, Oct 24
             </span>
-            <Link href="/" className="btn btn-ghost btn-sm">
+            <Link href="/" className="btn btn-ghost btn-sm hide-sm">
               Marketplace
             </Link>
           </div>
@@ -633,7 +696,7 @@ export default function MerchantPortalPage() {
               </div>
 
               {/* Weekly sales chart + Lifetime card */}
-              <div className="grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
+              <div className="dashboard-charts-grid">
                 <div className="card">
                   <div className="card-h">
                     <h3>Weekly sales</h3>
@@ -798,7 +861,7 @@ export default function MerchantPortalPage() {
                 </div>
               </div>
 
-              <div className="grid" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+              <div className="storefront-grid">
                 <form className="card form-grid" onSubmit={(e) => { e.preventDefault(); alert('Storefront settings updated'); }}>
                   <label className="field span4">
                     Store name

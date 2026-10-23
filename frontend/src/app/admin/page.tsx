@@ -1097,7 +1097,7 @@ export default function AdminConsolePage() {
               </div>
 
               {/* GMV by Delivery Day + Pipeline Funnel */}
-              <div className="grid" style={{ gridTemplateColumns: '2fr 1fr' }}>
+              <div className="dashboard-charts-grid">
                 <div className="card">
                   <div className="card-h">
                     <h3>GMV by delivery day</h3>

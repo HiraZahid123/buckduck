@@ -263,8 +263,26 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
   .steps,.g2,.g3,.g4{grid-template-columns:1fr} .grid.g4.kpis{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr} .span2,.span3,.span4,.span6{grid-column:span 1}
   .main-body{padding:16px} .main-top{padding:0 16px} .product-grid{grid-template-columns:repeat(2,1fr);gap:10px}
-  .store-hero .avatar{width:72px;height:72px;font-size:38px} .topbar .hide-sm{display:none} .section{padding:40px 0}
+  .store-hero .avatar{width:72px;height:72px;font-size:38px} .hide-sm{display:none!important} .section{padding:40px 0}
   .hero .container{padding-top:40px;padding-bottom:48px}
+}
+
+/* Dashboard Charts & Mobile 1-Box-Per-Row Layout */
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+.storefront-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) {
+  .dashboard-charts-grid,
+  .storefront-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 :root{color-scheme:light} html,body{background:var(--bg);overflow-x:hidden;width:100%;max-width:100vw}
