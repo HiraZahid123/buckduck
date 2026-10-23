@@ -16,6 +16,7 @@ export default function Header() {
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [activeSearchSource, setActiveSearchSource] = useState<'desktop' | 'mobile' | null>(null);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
   const mobileWrapperRef = useRef<HTMLDivElement>(null);
@@ -68,6 +69,7 @@ export default function Header() {
         !mobileWrapperRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+        setActiveSearchSource(null);
       }
       if (
         accountMenuRef.current &&
@@ -84,6 +86,7 @@ export default function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setIsDropdownOpen(false);
+      setActiveSearchSource(null);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
@@ -356,15 +359,19 @@ export default function Header() {
                 placeholder="Search plantains, palm oil, goat meat…"
                 aria-label="Search products"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setActiveSearchSource('desktop');
+                }}
                 onFocus={() => {
+                  setActiveSearchSource('desktop');
                   if (results.length > 0) setIsDropdownOpen(true);
                 }}
               />
             </form>
 
-            {/* LIVE SEARCH DROPDOWN OVERLAY */}
-            {isDropdownOpen && searchQuery.trim().length > 0 && (
+            {/* LIVE SEARCH DROPDOWN OVERLAY (Desktop only) */}
+            {activeSearchSource === 'desktop' && isDropdownOpen && searchQuery.trim().length > 0 && (
               <div className="live-search-dropdown">
                 <div className="live-search-header">
                   <span>{isSearching ? 'Searching...' : `Found ${results.length} item${results.length === 1 ? '' : 's'}`}</span>
@@ -519,16 +526,20 @@ export default function Header() {
               placeholder="Search plantains, palm oil, goat meat…"
               aria-label="Search products mobile"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setActiveSearchSource('mobile');
+              }}
               onFocus={() => {
+                setActiveSearchSource('mobile');
                 if (results.length > 0) setIsDropdownOpen(true);
               }}
             />
           </form>
 
-          {/* Mobile Dropdown */}
-          {isDropdownOpen && searchQuery.trim().length > 0 && (
-            <div className="live-search-dropdown" style={{ top: '100%' }}>
+          {/* Mobile Dropdown (Mobile only) */}
+          {activeSearchSource === 'mobile' && isDropdownOpen && searchQuery.trim().length > 0 && (
+            <div className="live-search-dropdown" style={{ top: 'calc(100% + 8px)' }}>
               <div className="live-search-header">
                 <span>{isSearching ? 'Searching...' : `Found ${results.length} item${results.length === 1 ? '' : 's'}`}</span>
                 <button
