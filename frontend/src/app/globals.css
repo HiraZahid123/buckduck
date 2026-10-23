@@ -585,16 +585,6 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
     grid-template-columns: 1fr;
     gap: 8px;
   }
-
-  /* Account & Order cards */
-  .account-order-card {
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 14px 12px;
-  }
-  .account-order-right {
-    margin-left: auto;
-  }
 }
 
 /* Driver Native vs Phone Simulator Mode */

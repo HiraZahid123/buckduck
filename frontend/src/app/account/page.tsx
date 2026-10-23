@@ -87,15 +87,21 @@ export default function AccountPage() {
       <Link
         key={o.id}
         href={`/order/${o.id}`}
-        className="card flat account-order-card"
+        className="card flat row between"
         style={{
           color: 'inherit',
           textDecoration: 'none',
-          marginBottom: 10,
+          marginBottom: 12,
           cursor: 'pointer',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          padding: '14px 18px',
         }}
       >
-        <div className="account-order-left" style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+        <div className="row" style={{ gap: 14, minWidth: 0, flex: '1 1 auto' }}>
           <div
             style={{
               width: 48,
@@ -124,7 +130,7 @@ export default function AccountPage() {
           </div>
         </div>
 
-        <div className="account-order-right" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <div className="row" style={{ gap: 12, flexShrink: 0, marginLeft: 'auto' }}>
           {getStatusBadge(o.status)}
           <span className="strong num" style={{ fontSize: 16 }}>
             {formatMoney(o.total_cents)}
