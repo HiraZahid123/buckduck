@@ -69,6 +69,7 @@ export default function AdminConsolePage() {
   const [userRoleFilter, setUserRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedMapPin, setSelectedMapPin] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // ZIP Code & Zone Management states
   const [zipList, setZipList] = useState<ServiceZip[]>(DEFAULT_ZIPS);
@@ -806,8 +807,13 @@ export default function AdminConsolePage() {
 
   return (
     <div className="portal">
+      {/* Mobile Drawer Overlay Backdrop */}
+      {isSidebarOpen && (
+        <div className="sidebar-overlay open" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Dark Navy Sidebar */}
-      <aside className="sidebar no-print" id="sidebar">
+      <aside className={`sidebar no-print ${isSidebarOpen ? 'open' : ''}`} id="sidebar">
         <div className="logo" style={{ padding: '4px 8px 20px' }}>
           <svg viewBox="0 0 48 48" style={{ width: 34, height: 34, flex: 'none' }}>
             <defs>
@@ -999,7 +1005,19 @@ export default function AdminConsolePage() {
       <div className="main">
         {/* Top Bar */}
         <div className="main-top no-print">
-          <div className="row">
+          <div className="row" style={{ alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              className="mobile-toggle"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <div className="strong" style={{ fontSize: 16 }}>
               {subView === 'overview' && 'Marketplace overview'}
               {subView === 'orders' && 'Orders'}

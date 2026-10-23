@@ -270,19 +270,60 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
 :root{color-scheme:light} html,body{background:var(--bg);overflow-x:hidden;width:100%;max-width:100vw}
 
 
-/* Additional styles for sidebar layouts */
-.admin-layout, .merchant-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+/* Portal Sidebar Drawer & Mobile Responsive Rules */
+.sidebar-overlay {
+  display: none;
 }
-@media (max-width: 900px) {
-  .admin-layout, .merchant-layout {
-    grid-template-columns: 1fr;
+@media (max-width: 1000px) {
+  .portal {
+    grid-template-columns: 1fr !important;
   }
   .sidebar {
-    position: relative;
-    height: auto;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: -280px !important;
+    width: 260px !important;
+    height: 100vh !important;
+    z-index: 100 !important;
+    transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+  }
+  .sidebar.open {
+    left: 0 !important;
+  }
+  .sidebar-overlay.open {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(6, 18, 46, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+  }
+  .mobile-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 6px;
+    margin-right: 8px;
+    border-radius: 8px;
+  }
+  .mobile-toggle:hover {
+    background: var(--surface-2);
+  }
+  .main-top {
+    padding: 0 16px !important;
+    height: 60px !important;
+  }
+  .main-body {
+    padding: 16px !important;
   }
 }
 
@@ -584,6 +625,44 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
   .pay-wallets {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+  .driver-mode-toggle {
+    display: none !important;
+  }
+  .driver-shell {
+    padding: 0 !important;
+    background: var(--bg) !important;
+  }
+  .driver-shell .phone {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    min-height: 100vh !important;
+  }
+  .driver-shell .d-head {
+    border-radius: 0 0 16px 16px !important;
+  }
+  .driver-shell .d-nav {
+    max-width: 100% !important;
+  }
+  .grid.g4.kpis, .grid.g4 {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  .kpi .val {
+    font-size: 22px !important;
+  }
+  .kanban {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 12px !important;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .kanban > div {
+    min-width: 260px !important;
+    flex-shrink: 0 !important;
   }
 }
 
