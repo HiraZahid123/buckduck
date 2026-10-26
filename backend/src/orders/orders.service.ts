@@ -242,7 +242,20 @@ export class OrdersService {
     const checkoutId = checkoutResult.checkoutId;
 
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    
+    let stripeKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeKey || stripeKey.includes('placeholder')) {
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const envPath = path.resolve(process.cwd(), '.env');
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, 'utf8');
+          const m = content.match(/STRIPE_SECRET_KEY=["']?([^"'\r\n]+)/);
+          if (m && m[1]) stripeKey = m[1].trim();
+        }
+      } catch {}
+    }
 
     if (stripeKey && stripeKey.startsWith('sk_') && !stripeKey.includes('placeholder')) {
       try {
