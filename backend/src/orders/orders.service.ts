@@ -248,18 +248,29 @@ export class OrdersService {
       try {
         const fs = require('fs');
         const path = require('path');
-        const envPath = path.resolve(process.cwd(), '.env');
-        if (fs.existsSync(envPath)) {
-          const content = fs.readFileSync(envPath, 'utf8');
-          const m = content.match(/STRIPE_SECRET_KEY=["']?([^"'\r\n]+)/);
-          if (m && m[1]) stripeKey = m[1].trim();
+        const candidates = [
+          path.resolve(process.cwd(), '.env'),
+          path.resolve(process.cwd(), 'backend', '.env'),
+          path.resolve(__dirname, '../../.env'),
+          path.resolve(__dirname, '../../../.env'),
+        ];
+        for (const envPath of candidates) {
+          if (fs.existsSync(envPath)) {
+            const content = fs.readFileSync(envPath, 'utf8');
+            const m = content.match(/STRIPE_SECRET_KEY=["']?([^"'\r\n]+)/);
+            if (m && m[1] && !m[1].includes('placeholder')) {
+              stripeKey = m[1].trim();
+              break;
+            }
+          }
         }
       } catch {}
     }
 
     if (stripeKey && stripeKey.startsWith('sk_') && !stripeKey.includes('placeholder')) {
       try {
-        const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
+        const StripeConstructor: any = typeof Stripe === 'function' ? Stripe : ((Stripe as any)?.default || require('stripe'));
+        const stripe = new StripeConstructor(stripeKey, { apiVersion: '2024-06-20' as any });
 
         const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
         for (const grp of valuation.stores) {
@@ -345,20 +356,12 @@ export class OrdersService {
           isStripeHosted: true,
         };
       } catch (stripeErr: any) {
-        console.warn('Stripe checkout session creation failed, falling back to direct redirect:', stripeErr?.message);
+        console.error('Stripe checkout session error:', stripeErr);
+        throw new BadRequestException(`Stripe checkout error: ${stripeErr?.message}`);
       }
+    } else {
+      throw new BadRequestException(`Stripe Secret Key not configured (found: ${stripeKey ? stripeKey.slice(0, 10) : 'none'})`);
     }
-
-    return {
-      success: true,
-      url: `/order/${firstOrderId}?checkout_id=${checkoutId}&stripe_demo=1`,
-      sessionId: `cs_test_mock_${Date.now()}`,
-      checkoutId,
-      orderId: firstOrderId,
-      orders: checkoutResult.orders,
-      isStripeHosted: false,
-      simulated: true,
-    };
   }
 
   async getUserOrders(customerId: number) {
