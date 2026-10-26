@@ -2,11 +2,14 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { EventsGateway } from '../events/events.gateway';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class DriverService {
   constructor(
     private prisma: PrismaService,
     private eventsGateway: EventsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async toggleOnline(driverId: number, isOnline: boolean) {
@@ -125,7 +128,12 @@ export class DriverService {
       throw new BadRequestException('Order not assigned to this driver');
     }
 
-    return this.prisma.orders.update({
+    const driver = await this.prisma.users.findUnique({
+      where: { id: driverId },
+      select: { name: true },
+    });
+
+    const updated = await this.prisma.orders.update({
       where: { id: order.id },
       data: {
         status: 'out_for_delivery',
@@ -141,6 +149,14 @@ export class DriverService {
         },
       },
     });
+
+    // Notify customer automatically via email + real-time status
+    await this.notificationsService.notifyOrderStatusChange(order.id, 'out_for_delivery', {
+      driverName: driver?.name,
+      bags: confirmedBags || order.bags,
+    });
+
+    return updated;
   }
 
   async completeDelivery(driverId: number, orderId: number, note: string, photoUrl?: string) {
@@ -154,7 +170,7 @@ export class DriverService {
 
     const transferId = `tr_demo_${Date.now()}`;
 
-    return this.prisma.orders.update({
+    const updated = await this.prisma.orders.update({
       where: { id: order.id },
       data: {
         status: 'delivered',
@@ -175,6 +191,13 @@ export class DriverService {
         stores: true,
       },
     });
+
+    // Notify customer automatically via email + real-time status
+    await this.notificationsService.notifyOrderStatusChange(order.id, 'delivered', {
+      note: note || 'Delivered with proof',
+    });
+
+    return updated;
   }
 
   async getEarnings(driverId: number) {

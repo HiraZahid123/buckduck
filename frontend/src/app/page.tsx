@@ -50,36 +50,90 @@ export default function HomePage() {
   const [zipStatus, setZipStatus] = useState<{ checked: boolean; valid: boolean; message: string } | null>(null);
   const [serviceZips, setServiceZips] = useState<ServiceZipItem[]>([]);
 
+  const defaultSupportedZips: Record<string, { city: string; state: string; zone: string }> = {
+    // Laurel, Maryland (20707–20726)
+    '20707': { city: 'Laurel', state: 'MD', zone: 'Laurel / Prince George\'s' },
+    '20708': { city: 'Laurel', state: 'MD', zone: 'South Laurel' },
+    '20709': { city: 'Laurel', state: 'MD', zone: 'Laurel Central' },
+    '20723': { city: 'Laurel', state: 'MD', zone: 'North Laurel / Scaggsville' },
+    '20724': { city: 'Laurel', state: 'MD', zone: 'Maryland City / Laurel' },
+    '20725': { city: 'Laurel', state: 'MD', zone: 'Laurel PO' },
+    '20726': { city: 'Laurel', state: 'MD', zone: 'Laurel Metro' },
+
+    // Silver Spring, Maryland (20901–20997)
+    '20901': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring / Four Corners' },
+    '20902': { city: 'Silver Spring', state: 'MD', zone: 'Wheaton / Glenmont' },
+    '20903': { city: 'Silver Spring', state: 'MD', zone: 'Hillandale' },
+    '20904': { city: 'Silver Spring', state: 'MD', zone: 'White Oak / Colesville' },
+    '20905': { city: 'Silver Spring', state: 'MD', zone: 'Cloverly' },
+    '20906': { city: 'Silver Spring', state: 'MD', zone: 'Aspen Hill / Layhill' },
+    '20907': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring East' },
+    '20908': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring North' },
+    '20910': { city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring' },
+    '20911': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Center' },
+    '20912': { city: 'Takoma Park', state: 'MD', zone: 'Takoma Park Old Town' },
+    '20913': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Metro' },
+    '20914': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Park' },
+    '20915': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring West' },
+    '20916': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Station' },
+    '20918': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Highlands' },
+    '20993': { city: 'Silver Spring', state: 'MD', zone: 'FDA White Oak Campus' },
+    '20997': { city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Hub' },
+
+    // Surrounding Service Areas
+    '20850': { city: 'Rockville', state: 'MD', zone: 'Rockville Town Center' },
+    '20852': { city: 'North Bethesda', state: 'MD', zone: 'Pike & Rose / White Flint' },
+    '20011': { city: 'Washington', state: 'DC', zone: 'Petworth / Brightwood' },
+    '20012': { city: 'Washington', state: 'DC', zone: 'Takoma DC' },
+  };
+
   const handleCheckZip = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanZip = zipInput.trim();
-    if (!cleanZip) return;
+    const query = zipInput.trim();
+    if (!query) return;
 
-    const defaultSupportedZips: Record<string, string> = {
-      '20910': 'Downtown Silver Spring, MD',
-      '20901': 'Silver Spring / Four Corners, MD',
-      '20902': 'Wheaton / Silver Spring, MD',
-      '20903': 'Hillandale, MD',
-      '20904': 'White Oak / Colesville, MD',
-      '20905': 'Cloverly, MD',
-      '20906': 'Aspen Hill / Glenmont, MD',
-      '20912': 'Takoma Park, MD',
-      '20850': 'Rockville, MD',
-      '20852': 'North Bethesda, MD',
-      '20011': 'Petworth / Brightwood, DC',
-      '20012': 'Takoma, DC',
-    };
+    const lowerQuery = query.toLowerCase();
+    const isZipCode = /^\d{5}$/.test(query);
 
     let matchedArea = '';
+    let matchedLocation = '';
 
-    if (serviceZips.length > 0) {
-      const match = serviceZips.find((z) => z.zip === cleanZip && z.active);
-      if (match) {
-        matchedArea = `${match.zone || match.city}, ${match.state}`;
+    if (isZipCode) {
+      if (serviceZips.length > 0) {
+        const match = serviceZips.find((z) => z.zip === query && z.active);
+        if (match) {
+          matchedArea = `${match.zone || match.city}, ${match.state}`;
+          matchedLocation = `${query}`;
+        }
+      }
+      if (!matchedArea && defaultSupportedZips[query]) {
+        const item = defaultSupportedZips[query];
+        matchedArea = `${item.zone || item.city}, ${item.state}`;
+        matchedLocation = `${query}`;
+      } else if (!matchedArea && (query.startsWith('209') || query.startsWith('207') || query.startsWith('208'))) {
+        matchedArea = 'Maryland & DC Metro Saturday Zone';
+        matchedLocation = `${query}`;
       }
     } else {
-      if (defaultSupportedZips[cleanZip] || cleanZip.startsWith('209') || cleanZip.startsWith('208')) {
-        matchedArea = defaultSupportedZips[cleanZip] || 'Silver Spring & Montgomery County, MD';
+      // City Name Search (e.g. Laurel, Silver Spring, Rockville, Bethesda, Takoma Park, Washington)
+      if (serviceZips.length > 0) {
+        const matchCity = serviceZips.find(
+          (z) => z.active && (z.city.toLowerCase() === lowerQuery || lowerQuery.includes(z.city.toLowerCase()) || z.city.toLowerCase().includes(lowerQuery))
+        );
+        if (matchCity) {
+          matchedArea = `${matchCity.city}, ${matchCity.state}`;
+          matchedLocation = matchCity.city;
+        }
+      }
+      if (!matchedArea) {
+        const defaultList = Object.values(defaultSupportedZips);
+        const matchDefault = defaultList.find(
+          (z) => z.city.toLowerCase() === lowerQuery || lowerQuery.includes(z.city.toLowerCase()) || z.city.toLowerCase().includes(lowerQuery)
+        );
+        if (matchDefault) {
+          matchedArea = `${matchDefault.city}, ${matchDefault.state}`;
+          matchedLocation = matchDefault.city;
+        }
       }
     }
 
@@ -87,16 +141,17 @@ export default function HomePage() {
       setZipStatus({
         checked: true,
         valid: true,
-        message: `🎉 Great news! We deliver to ${matchedArea} (${cleanZip}) every Saturday!`,
+        message: `🎉 Great news! We deliver to ${matchedArea} (${matchedLocation}) every Saturday!`,
       });
       try {
-        localStorage.setItem('bd_zip', cleanZip);
+        localStorage.setItem('bd_zip', isZipCode ? query : '20910');
+        localStorage.setItem('bd_city', matchedLocation);
       } catch {}
     } else {
       setZipStatus({
         checked: true,
         valid: false,
-        message: `📍 ${cleanZip} is outside our current Saturday delivery zones. We are expanding soon!`,
+        message: `📍 "${query}" is outside our current Saturday delivery zones. We are expanding soon!`,
       });
     }
   };
@@ -206,10 +261,10 @@ export default function HomePage() {
                 <span style={{ fontSize: 18, flexShrink: 0 }}>📍</span>
                 <input
                   type="text"
-                  placeholder="Enter delivery ZIP (e.g. 20910)"
+                  placeholder="Enter delivery City or ZIP (e.g. Laurel, Silver Spring, 20707)"
                   value={zipInput}
                   onChange={(e) => setZipInput(e.target.value)}
-                  maxLength={5}
+                  maxLength={32}
                   style={{
                     flex: 1,
                     minWidth: 0,
@@ -229,7 +284,7 @@ export default function HomePage() {
                   className="btn btn-sm btn-gold"
                   style={{ padding: '9px 14px', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}
                 >
-                  Check ZIP
+                  Check Area
                 </button>
               </form>
 

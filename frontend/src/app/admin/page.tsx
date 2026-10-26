@@ -39,16 +39,39 @@ export interface ServiceZip {
 }
 
 const DEFAULT_ZIPS: ServiceZip[] = [
-  { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
+  // Laurel, MD: 20707–20726
+  { zip: '20707', city: 'Laurel', state: 'MD', zone: 'Downtown / North Laurel', active: true },
+  { zip: '20708', city: 'Laurel', state: 'MD', zone: 'South Laurel / Montpelier', active: true },
+  { zip: '20709', city: 'Laurel', state: 'MD', zone: 'Laurel West', active: true },
+  { zip: '20723', city: 'Laurel', state: 'MD', zone: 'Maryland City / Russett', active: true },
+  { zip: '20724', city: 'Laurel', state: 'MD', zone: 'Fort Meade Corridor', active: true },
+  { zip: '20725', city: 'Laurel', state: 'MD', zone: 'Laurel Highlands', active: true },
+  { zip: '20726', city: 'Laurel', state: 'MD', zone: 'South Laurel Woods', active: true },
+  // Silver Spring, MD: 20901–20997
   { zip: '20901', city: 'Silver Spring', state: 'MD', zone: 'Four Corners / Burnt Mills', active: true },
   { zip: '20902', city: 'Silver Spring', state: 'MD', zone: 'Wheaton / Glenmont', active: true },
   { zip: '20903', city: 'Silver Spring', state: 'MD', zone: 'Hillandale', active: true },
   { zip: '20904', city: 'Silver Spring', state: 'MD', zone: 'White Oak / Colesville', active: true },
   { zip: '20905', city: 'Silver Spring', state: 'MD', zone: 'Cloverly', active: true },
   { zip: '20906', city: 'Silver Spring', state: 'MD', zone: 'Aspen Hill / Layhill', active: true },
+  { zip: '20907', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Metro', active: true },
+  { zip: '20908', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Central', active: true },
+  { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
+  { zip: '20911', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring East', active: true },
   { zip: '20912', city: 'Takoma Park', state: 'MD', zone: 'Takoma Park Old Town', active: true },
+  { zip: '20913', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring North', active: true },
+  { zip: '20914', city: 'Silver Spring', state: 'MD', zone: 'Colesville North', active: true },
+  { zip: '20915', city: 'Silver Spring', state: 'MD', zone: 'Woodside / Forest Glen', active: true },
+  { zip: '20916', city: 'Silver Spring', state: 'MD', zone: 'Long Branch', active: true },
+  { zip: '20918', city: 'Silver Spring', state: 'MD', zone: 'Kemp Mill', active: true },
+  { zip: '20993', city: 'Silver Spring', state: 'MD', zone: 'FDA Campus / White Oak', active: true },
+  { zip: '20997', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring North Park', active: true },
+  // Rockville & Bethesda
   { zip: '20850', city: 'Rockville', state: 'MD', zone: 'Rockville Town Center', active: true },
   { zip: '20852', city: 'North Bethesda', state: 'MD', zone: 'Pike & Rose / White Flint', active: true },
+  { zip: '20814', city: 'Bethesda', state: 'MD', zone: 'Downtown Bethesda', active: true },
+  { zip: '20817', city: 'Bethesda', state: 'MD', zone: 'Cabin John / West Bethesda', active: true },
+  // DC
   { zip: '20011', city: 'Washington', state: 'DC', zone: 'Petworth / Brightwood', active: true },
   { zip: '20012', city: 'Washington', state: 'DC', zone: 'Takoma DC', active: true },
 ];
@@ -81,6 +104,25 @@ export default function AdminConsolePage() {
   const [stateFilter, setStateFilter] = useState('All');
   const [zipFeedback, setZipFeedback] = useState('');
   const [isSavingZip, setIsSavingZip] = useState(false);
+
+  // Marketplace Settings states
+  const [minOrderSubtotalCents, setMinOrderSubtotalCents] = useState(1500);
+  const [merchantPromosEnabled, setMerchantPromosEnabled] = useState(true);
+  const [deliveryFeeCents, setDeliveryFeeCents] = useState(599);
+  const [serviceFeeRate, setServiceFeeRate] = useState(0.05);
+  const [minServiceFeeCents, setMinServiceFeeCents] = useState(199);
+  const [merchantCommissionRate, setMerchantCommissionRate] = useState(0.15);
+  const [driverBasePayCents, setDriverBasePayCents] = useState(550);
+  const [itemsPerBag, setItemsPerBag] = useState(10);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [settingsFeedback, setSettingsFeedback] = useState('');
+
+  // Admin Broadcast Announcement states
+  const [broadcastTarget, setBroadcastTarget] = useState<'both' | 'merchants' | 'drivers'>('both');
+  const [broadcastTitle, setBroadcastTitle] = useState('BuckDuck Notice');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
+  const [broadcastFeedback, setBroadcastFeedback] = useState('');
 
   // Order modal (39-admin-order-modal.png)
   const [modalOrder, setModalOrder] = useState<any>(null);
@@ -242,6 +284,112 @@ export default function AdminConsolePage() {
     }
   };
 
+  // Synchronize marketplace settings from DB
+  useEffect(() => {
+    if (settings) {
+      if (settings.minimum_delivery_subtotal_cents) {
+        setMinOrderSubtotalCents(Number(settings.minimum_delivery_subtotal_cents) || 1500);
+      }
+      if (settings.merchant_promotions_enabled !== undefined) {
+        setMerchantPromosEnabled(settings.merchant_promotions_enabled !== 'false');
+      }
+      if (settings.delivery_fee_cents) {
+        setDeliveryFeeCents(Number(settings.delivery_fee_cents) || 599);
+      }
+      if (settings.service_fee_rate) {
+        setServiceFeeRate(Number(settings.service_fee_rate) || 0.05);
+      }
+      if (settings.minimum_service_fee_cents) {
+        setMinServiceFeeCents(Number(settings.minimum_service_fee_cents) || 199);
+      }
+      if (settings.merchant_commission_rate) {
+        setMerchantCommissionRate(Number(settings.merchant_commission_rate) || 0.15);
+      }
+      if (settings.driver_base_pay_cents) {
+        setDriverBasePayCents(Number(settings.driver_base_pay_cents) || 550);
+      }
+      if (settings.items_per_bag) {
+        setItemsPerBag(Number(settings.items_per_bag) || 10);
+      }
+    }
+  }, [settings]);
+
+  const handleSaveSettings = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSavingSettings(true);
+    setSettingsFeedback('');
+    const token = localStorage.getItem('bd_token');
+    try {
+      const payload = {
+        minimum_delivery_subtotal_cents: minOrderSubtotalCents,
+        merchant_promotions_enabled: String(merchantPromosEnabled),
+        delivery_fee_cents: deliveryFeeCents,
+        service_fee_rate: serviceFeeRate,
+        minimum_service_fee_cents: minServiceFeeCents,
+        merchant_commission_rate: merchantCommissionRate,
+        driver_base_pay_cents: driverBasePayCents,
+        items_per_bag: itemsPerBag,
+      };
+
+      const res = await fetch('/api/settings/bulk', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setSettingsFeedback('✓ Marketplace settings saved and synchronized to checkout & backend!');
+        setTimeout(() => setSettingsFeedback(''), 4000);
+      } else {
+        setSettingsFeedback('⚠️ Failed to save settings to server');
+      }
+    } catch {
+      setSettingsFeedback('⚠️ Network error while saving settings');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastMessage.trim()) {
+      alert('Please enter a message to broadcast.');
+      return;
+    }
+    setIsSendingBroadcast(true);
+    setBroadcastFeedback('');
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/settings/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          target: broadcastTarget,
+          title: broadcastTitle.trim() || 'BuckDuck Notice',
+          message: broadcastMessage.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        setBroadcastFeedback(`✓ Broadcast successfully sent to ${broadcastTarget === 'both' ? 'Merchants & Drivers' : broadcastTarget}!`);
+        setBroadcastMessage('');
+        setTimeout(() => setBroadcastFeedback(''), 5000);
+      } else {
+        setBroadcastFeedback('⚠️ Failed to dispatch announcement broadcast');
+      }
+    } catch {
+      setBroadcastFeedback('⚠️ Network error while broadcasting announcement');
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
+
   const handleAddZip = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanZip = newZip.trim();
@@ -284,16 +432,36 @@ export default function AdminConsolePage() {
 
   const handleAddPresetZone = (zoneKey: string) => {
     let presets: ServiceZip[] = [];
-    if (zoneKey === 'silver-spring') {
+    if (zoneKey === 'laurel') {
       presets = [
-        { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
-        { zip: '20901', city: 'Silver Spring', state: 'MD', zone: 'Four Corners', active: true },
+        { zip: '20707', city: 'Laurel', state: 'MD', zone: 'Downtown / North Laurel', active: true },
+        { zip: '20708', city: 'Laurel', state: 'MD', zone: 'South Laurel / Montpelier', active: true },
+        { zip: '20709', city: 'Laurel', state: 'MD', zone: 'Laurel West', active: true },
+        { zip: '20723', city: 'Laurel', state: 'MD', zone: 'Maryland City / Russett', active: true },
+        { zip: '20724', city: 'Laurel', state: 'MD', zone: 'Fort Meade Corridor', active: true },
+        { zip: '20725', city: 'Laurel', state: 'MD', zone: 'Laurel Highlands', active: true },
+        { zip: '20726', city: 'Laurel', state: 'MD', zone: 'South Laurel Woods', active: true },
+      ];
+    } else if (zoneKey === 'silver-spring') {
+      presets = [
+        { zip: '20901', city: 'Silver Spring', state: 'MD', zone: 'Four Corners / Burnt Mills', active: true },
         { zip: '20902', city: 'Silver Spring', state: 'MD', zone: 'Wheaton / Glenmont', active: true },
         { zip: '20903', city: 'Silver Spring', state: 'MD', zone: 'Hillandale', active: true },
         { zip: '20904', city: 'Silver Spring', state: 'MD', zone: 'White Oak / Colesville', active: true },
         { zip: '20905', city: 'Silver Spring', state: 'MD', zone: 'Cloverly', active: true },
         { zip: '20906', city: 'Silver Spring', state: 'MD', zone: 'Aspen Hill / Layhill', active: true },
+        { zip: '20907', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Metro', active: true },
+        { zip: '20908', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring Central', active: true },
+        { zip: '20910', city: 'Silver Spring', state: 'MD', zone: 'Downtown Silver Spring', active: true },
+        { zip: '20911', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring East', active: true },
         { zip: '20912', city: 'Takoma Park', state: 'MD', zone: 'Takoma Park Old Town', active: true },
+        { zip: '20913', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring North', active: true },
+        { zip: '20914', city: 'Silver Spring', state: 'MD', zone: 'Colesville North', active: true },
+        { zip: '20915', city: 'Silver Spring', state: 'MD', zone: 'Woodside / Forest Glen', active: true },
+        { zip: '20916', city: 'Silver Spring', state: 'MD', zone: 'Long Branch', active: true },
+        { zip: '20918', city: 'Silver Spring', state: 'MD', zone: 'Kemp Mill', active: true },
+        { zip: '20993', city: 'Silver Spring', state: 'MD', zone: 'FDA Campus / White Oak', active: true },
+        { zip: '20997', city: 'Silver Spring', state: 'MD', zone: 'Silver Spring North Park', active: true },
       ];
     } else if (zoneKey === 'rockville') {
       presets = [
@@ -2561,10 +2729,19 @@ export default function AdminConsolePage() {
                     <button
                       type="button"
                       className="btn btn-outline btn-sm"
-                      onClick={() => handleAddPresetZone('silver-spring')}
-                      title="Activate 8 ZIP codes in Silver Spring & Takoma Park"
+                      onClick={() => handleAddPresetZone('laurel')}
+                      title="Activate 7 ZIP codes across Laurel, MD (20707–20726)"
+                      style={{ borderColor: 'var(--gold-metal, #D4A017)', color: 'var(--gold-metal, #D4A017)', fontWeight: 700 }}
                     >
-                      + Silver Spring Core (8 ZIPs)
+                      + Laurel, MD (7 ZIPs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => handleAddPresetZone('silver-spring')}
+                      title="Activate all 18 ZIP codes in Silver Spring & Takoma Park"
+                    >
+                      + Silver Spring (18 ZIPs)
                     </button>
                     <button
                       type="button"
@@ -2859,22 +3036,38 @@ export default function AdminConsolePage() {
             </div>
           )}
 
-          {/* SCREEN 9: SETTINGS (Screenshot 5) */}
+          {/* SCREEN 9: SETTINGS */}
           {subView === 'settings' && (
             <div className="stack" style={{ gap: 24, maxWidth: 960 }}>
               <div className="page-h">
                 <div>
-                  <h1 style={{ margin: 0, fontSize: 28 }}>Settings</h1>
+                  <h1 style={{ margin: 0, fontSize: 28 }}>Settings & Broadcasts</h1>
                   <h2 style={{ margin: '8px 0 0', fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
-                    Marketplace settings
+                    Marketplace settings & announcements
                   </h2>
                   <p style={{ margin: '4px 0 0', color: 'var(--muted)', fontSize: 14 }}>
-                    Fees, payouts and delivery schedule. Changes apply to new orders immediately.
+                    Minimum order thresholds, fees, merchant promo permissions, and targeted broadcasts to merchants & drivers.
                   </p>
                 </div>
               </div>
 
-              {/* CARD 1: Customer fees */}
+              {settingsFeedback && (
+                <div
+                  className="alert"
+                  style={{
+                    background: settingsFeedback.startsWith('✓') ? 'rgba(46, 125, 50, 0.12)' : 'rgba(198, 40, 40, 0.12)',
+                    color: settingsFeedback.startsWith('✓') ? '#2e7d32' : '#c62828',
+                    border: `1px solid ${settingsFeedback.startsWith('✓') ? '#2e7d32' : '#c62828'}`,
+                    padding: '14px 18px',
+                    borderRadius: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {settingsFeedback}
+                </div>
+              )}
+
+              {/* CARD 1: Customer Fees & Minimum Order Threshold */}
               <div
                 className="card"
                 style={{
@@ -2885,20 +3078,46 @@ export default function AdminConsolePage() {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                 }}
               >
-                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
-                  Customer fees
-                </h3>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
+                    Customer Fees & Minimum Order Threshold
+                  </h3>
+                  <span className="badge b-gold" style={{ fontSize: 12, fontWeight: 700 }}>
+                    Active Min Order: ${(minOrderSubtotalCents / 100).toFixed(2)}
+                  </span>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
+                      Minimum Order for Delivery (cents)
+                    </span>
+                    <input
+                      type="number"
+                      step={50}
+                      min={0}
+                      className="input"
+                      value={minOrderSubtotalCents}
+                      onChange={(e) => setMinOrderSubtotalCents(Math.max(0, Number(e.target.value) || 0))}
+                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 15, fontWeight: 700 }}
+                    />
+                    <span style={{ fontSize: 12, color: '#475569' }}>
+                      Currently: <strong>${(minOrderSubtotalCents / 100).toFixed(2)}</strong>. Customers cannot checkout below this merchandise subtotal.
+                    </span>
+                  </label>
+
                   <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
                       Delivery fee per store (cents)
                     </span>
                     <input
+                      type="number"
                       className="input"
-                      defaultValue="599"
+                      value={deliveryFeeCents}
+                      onChange={(e) => setDeliveryFeeCents(Number(e.target.value) || 0)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>e.g. 599 = $5.99</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>e.g. 599 = $5.99 per store</span>
                   </label>
 
                   <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -2906,11 +3125,14 @@ export default function AdminConsolePage() {
                       Service fee rate
                     </span>
                     <input
+                      type="number"
+                      step={0.01}
                       className="input"
-                      defaultValue="0.05"
+                      value={serviceFeeRate}
+                      onChange={(e) => setServiceFeeRate(Number(e.target.value) || 0)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>0.05 = 5% of items</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>0.05 = 5% of merchandise</span>
                   </label>
 
                   <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -2918,40 +3140,18 @@ export default function AdminConsolePage() {
                       Minimum service fee (cents)
                     </span>
                     <input
+                      type="number"
                       className="input"
-                      defaultValue="199"
+                      value={minServiceFeeCents}
+                      onChange={(e) => setMinServiceFeeCents(Number(e.target.value) || 0)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Applied when % is lower</span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Minimum order (cents)
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue="1500"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Cart subtotal required</span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1', maxWidth: 380 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Tax rate
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue="0"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Use 0 where groceries are tax-exempt</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Floor fee if percentage is lower</span>
                   </label>
                 </div>
               </div>
 
-              {/* CARD 2: Partners */}
+              {/* CARD 2: Merchant Promotions & Feature Control */}
               <div
                 className="card"
                 style={{
@@ -2963,19 +3163,43 @@ export default function AdminConsolePage() {
                 }}
               >
                 <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
-                  Partners
+                  Merchant Promotions & Partner Operations
                 </h3>
+
+                {/* Promo feature toggle */}
+                <div style={{ background: '#f8fafc', padding: '16px 20px', borderRadius: 12, border: '1px solid #e2e8f0', marginBottom: 20 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={merchantPromosEnabled}
+                      onChange={(e) => setMerchantPromosEnabled(e.target.checked)}
+                      style={{ width: 18, height: 18, accentColor: 'var(--gold-metal, #D4A017)' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>
+                        Allow Merchants to configure On Sale / Discount / Promo Code features
+                      </div>
+                      <div style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>
+                        When enabled, merchants can set sale prices, strike-through original prices, and promotional discount tags on items in their catalog.
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
                   <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
                       Default merchant commission
                     </span>
                     <input
+                      type="number"
+                      step={0.01}
                       className="input"
-                      defaultValue="0.15"
+                      value={merchantCommissionRate}
+                      onChange={(e) => setMerchantCommissionRate(Number(e.target.value) || 0)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>0.15 = 15% for new stores</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>0.15 = 15% platform fee</span>
                   </label>
 
                   <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -2983,142 +3207,199 @@ export default function AdminConsolePage() {
                       Driver base pay per order (cents)
                     </span>
                     <input
+                      type="number"
                       className="input"
-                      defaultValue="550"
+                      value={driverBasePayCents}
+                      onChange={(e) => setDriverBasePayCents(Number(e.target.value) || 0)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Drivers also keep 100% of tips</span>
+                    <span style={{ fontSize: 12, color: '#64748B' }}>Drivers also keep 100% of customer tips</span>
                   </label>
 
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1', maxWidth: 380 }}>
+                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
                       Items per BuckDuck bag
                     </span>
                     <input
+                      type="number"
                       className="input"
-                      defaultValue="10"
+                      value={itemsPerBag}
+                      onChange={(e) => setItemsPerBag(Number(e.target.value) || 10)}
                       style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
                     />
                     <span style={{ fontSize: 12, color: '#64748B' }}>Used to estimate bags per order</span>
                   </label>
                 </div>
-              </div>
 
-              {/* CARD 3: Delivery schedule */}
-              <div
-                className="card"
-                style={{
-                  background: '#fff',
-                  borderRadius: 16,
-                  padding: '24px 28px',
-                  border: '1px solid #E2E8F0',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                }}
-              >
-                <h3 style={{ margin: '0 0 20px', fontSize: 18, fontWeight: 700, color: '#0F172A' }}>
-                  Delivery schedule
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px 28px' }}>
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Delivery day
-                    </span>
-                    <select
-                      className="input"
-                      defaultValue="Saturday"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, background: '#fff' }}
-                    >
-                      <option value="Saturday">Saturday</option>
-                      <option value="Sunday">Sunday</option>
-                      <option value="Friday">Friday</option>
-                    </select>
-                    <span style={{ fontSize: 12, color: '#64748B' }}>BuckDuck delivers once a week</span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Order cutoff (hours before window)
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue="24"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Gives stores time to pack</span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Weeks of windows to publish
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue="4"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Default capacity per window
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue="120"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>Orders per window</span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Default windows (JSON)
-                    </span>
-                    <input
-                      className="input"
-                      defaultValue='[["06:00","12:00"],["12:00","16:00"]]'
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>
-                      [[&quot;06:00&quot;,&quot;12:00&quot;],[&quot;12:00&quot;,&quot;16:00&quot;]] = 6 AM–12 PM and 12 PM–4 PM
-                    </span>
-                  </label>
-
-                  <label className="field" style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>
-                      Service ZIP codes
-                    </span>
-                    <input
-                      className="input"
-                      placeholder="Leave blank to accept all ZIPs"
-                      defaultValue="20910, 20901, 20902, 20903, 20904, 20905, 20906, 20912, 20850, 20852, 20011, 20012"
-                      style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14 }}
-                    />
-                    <span style={{ fontSize: 12, color: '#64748B' }}>
-                      Comma-separated, e.g. 77036,77042,77072
-                    </span>
-                  </label>
+                <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={isSavingSettings}
+                    onClick={() => handleSaveSettings()}
+                    style={{
+                      background: 'var(--gold-metal, #D4A017)',
+                      color: '#000',
+                      padding: '12px 28px',
+                      borderRadius: 999,
+                      fontWeight: 700,
+                      fontSize: 14,
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    {isSavingSettings ? (
+                      <>
+                        <RefreshCw size={14} className="spin" /> Saving Settings...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={14} /> Save Marketplace Settings
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => alert('Settings saved successfully')}
-                  style={{
-                    background: '#0B1527',
-                    color: '#ffffff',
-                    padding: '12px 28px',
-                    borderRadius: 999,
-                    fontWeight: 700,
-                    fontSize: 14,
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Save settings
-                </button>
+              {/* CARD 3: TARGETED BROADCAST ANNOUNCEMENT CENTER */}
+              <div
+                className="card"
+                style={{
+                  background: '#0F172A',
+                  color: '#fff',
+                  borderRadius: 16,
+                  padding: '24px 28px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                <div className="row" style={{ alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                  <Radio size={22} style={{ color: 'var(--gold-metal, #D4A017)' }} />
+                  <h3 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: '#fff' }}>
+                    Targeted Announcement Broadcast Center
+                  </h3>
+                </div>
+                <p style={{ margin: '0 0 20px', color: '#94A3B8', fontSize: 14 }}>
+                  Send instantaneous alerts to connected portals via live WebSockets and system banners. Target <strong>Merchants only</strong>, <strong>Drivers only</strong>, or <strong>Both</strong>.
+                </p>
+
+                {broadcastFeedback && (
+                  <div
+                    style={{
+                      background: broadcastFeedback.startsWith('✓') ? 'rgba(46, 125, 50, 0.25)' : 'rgba(198, 40, 40, 0.25)',
+                      color: broadcastFeedback.startsWith('✓') ? '#4ade80' : '#f87171',
+                      border: `1px solid ${broadcastFeedback.startsWith('✓') ? '#4ade80' : '#f87171'}`,
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      marginBottom: 16,
+                    }}
+                  >
+                    {broadcastFeedback}
+                  </div>
+                )}
+
+                <form onSubmit={handleSendBroadcast} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>
+                        Target Audience
+                      </span>
+                      <select
+                        className="input"
+                        value={broadcastTarget}
+                        onChange={(e: any) => setBroadcastTarget(e.target.value)}
+                        style={{
+                          background: '#1E293B',
+                          color: '#fff',
+                          border: '1px solid #334155',
+                          borderRadius: 8,
+                          padding: '10px 14px',
+                          fontSize: 14,
+                        }}
+                      >
+                        <option value="both">Both (Merchants & Drivers)</option>
+                        <option value="merchants">Merchants only</option>
+                        <option value="drivers">Drivers only</option>
+                      </select>
+                    </label>
+
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>
+                        Announcement Title
+                      </span>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="e.g. Saturday Pickup Schedule or Weather Alert"
+                        value={broadcastTitle}
+                        onChange={(e) => setBroadcastTitle(e.target.value)}
+                        style={{
+                          background: '#1E293B',
+                          color: '#fff',
+                          border: '1px solid #334155',
+                          borderRadius: 8,
+                          padding: '10px 14px',
+                          fontSize: 14,
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>
+                      Broadcast Message Content
+                    </span>
+                    <textarea
+                      rows={3}
+                      className="input"
+                      placeholder="Enter announcement text to display in portal headers..."
+                      value={broadcastMessage}
+                      onChange={(e) => setBroadcastMessage(e.target.value)}
+                      style={{
+                        background: '#1E293B',
+                        color: '#fff',
+                        border: '1px solid #334155',
+                        borderRadius: 8,
+                        padding: '10px 14px',
+                        fontSize: 14,
+                        resize: 'vertical',
+                      }}
+                    />
+                  </label>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                    <button
+                      type="submit"
+                      disabled={isSendingBroadcast}
+                      style={{
+                        background: 'var(--gold-metal, #D4A017)',
+                        color: '#000',
+                        fontWeight: 700,
+                        padding: '12px 24px',
+                        borderRadius: 8,
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 14,
+                      }}
+                    >
+                      {isSendingBroadcast ? (
+                        <>
+                          <RefreshCw size={14} className="spin" /> Broadcasting...
+                        </>
+                      ) : (
+                        <>
+                          <Radio size={14} /> Send Targeted Broadcast
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}

@@ -13,13 +13,29 @@ export default function AccountPage() {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
+  const [addressLine1, setAddressLine1] = useState('123 Georgia Ave');
+  const [city, setCity] = useState('Silver Spring');
+  const [state, setState] = useState('MD');
+  const [zip, setZip] = useState('20910');
+  const [isSavedInfoEnabled, setIsSavedInfoEnabled] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
     } else if (user) {
       setNameInput(user.name || '');
-      setPhoneInput(user.phone || '');
+      setPhoneInput(user.phone || '(301) 555-0199');
+      try {
+        const saved = localStorage.getItem('bd_saved_profile');
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.addressLine1) setAddressLine1(p.addressLine1);
+          if (p.city) setCity(p.city);
+          if (p.state) setState(p.state);
+          if (p.zip) setZip(p.zip);
+          if (p.phone) setPhoneInput(p.phone);
+        }
+      } catch {}
       loadOrders();
     }
   }, [user, authLoading]);
@@ -49,6 +65,22 @@ export default function AccountPage() {
   const handleSignOut = () => {
     logout();
     router.push('/login');
+  };
+
+  const handleSaveProfile = () => {
+    if (isSavedInfoEnabled) {
+      try {
+        localStorage.setItem(
+          'bd_saved_profile',
+          JSON.stringify({ addressLine1, city, state, zip, phone: phoneInput })
+        );
+      } catch {}
+    } else {
+      try {
+        localStorage.removeItem('bd_saved_profile');
+      } catch {}
+    }
+    setIsEditProfileOpen(false);
   };
 
   const activeOrders = orders.filter(
@@ -191,6 +223,40 @@ export default function AccountPage() {
         </div>
       </div>
 
+      {/* Complete Customer Profile & Saved Delivery Address Card */}
+      <div className="card mb24" style={{ padding: 20 }}>
+        <div className="row between wrap" style={{ gap: 12, marginBottom: 14 }}>
+          <div>
+            <div className="tiny muted strong">DEFAULT DELIVERY ADDRESS & CONTACT</div>
+            <h3 style={{ margin: '4px 0 0' }}>{user?.name || 'Customer'}</h3>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setIsEditProfileOpen(true)}
+          >
+            Edit address & details
+          </button>
+        </div>
+
+        <div className="grid g3" style={{ gap: 12 }}>
+          <div style={{ padding: 12, background: 'var(--surface-2)', borderRadius: 10 }}>
+            <div className="tiny muted">Phone Number</div>
+            <div className="strong small">{phoneInput || '(301) 555-0199'}</div>
+          </div>
+          <div style={{ padding: 12, background: 'var(--surface-2)', borderRadius: 10 }}>
+            <div className="tiny muted">Delivery Address</div>
+            <div className="strong small">{addressLine1 || '123 Georgia Ave'}</div>
+            <div className="tiny muted">{city || 'Silver Spring'}, {state || 'MD'} {zip || '20910'}</div>
+          </div>
+          <div style={{ padding: 12, background: 'var(--surface-2)', borderRadius: 10 }}>
+            <div className="tiny muted">1-Click Checkout Preference</div>
+            <div className="strong small" style={{ color: isSavedInfoEnabled ? '#15803d' : '#64748b' }}>
+              {isSavedInfoEnabled ? '✓ Auto-fill & save enabled' : '✕ Do not save details'}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Upcoming deliveries */}
       <h3 className="mt24 mb16">Upcoming deliveries</h3>
       {loading ? (
@@ -222,7 +288,7 @@ export default function AccountPage() {
         <div className="modal-bg">
           <div className="modal">
             <div className="modal-h">
-              <h3>Edit profile</h3>
+              <h3>Edit Profile & Delivery Details</h3>
               <button
                 className="icon-btn"
                 onClick={() => setIsEditProfileOpen(false)}
@@ -231,25 +297,85 @@ export default function AccountPage() {
               </button>
             </div>
 
-            <div className="modal-b stack">
-              <label className="field">
-                Name
-                <input
-                  className="input"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  required
-                />
-              </label>
+            <div className="modal-b stack" style={{ gap: 12 }}>
+              <div className="form-grid">
+                <div className="span3">
+                  <label className="field">
+                    Full Name
+                    <input
+                      className="input"
+                      value={nameInput}
+                      onChange={(e) => setNameInput(e.target.value)}
+                      required
+                    />
+                  </label>
+                </div>
 
-              <label className="field">
-                Phone
+                <div className="span3">
+                  <label className="field">
+                    Phone Number
+                    <input
+                      className="input"
+                      value={phoneInput}
+                      onChange={(e) => setPhoneInput(e.target.value)}
+                      placeholder="(301) 555-0101"
+                    />
+                  </label>
+                </div>
+
+                <div className="span4">
+                  <label className="field">
+                    Street Address
+                    <input
+                      className="input"
+                      value={addressLine1}
+                      onChange={(e) => setAddressLine1(e.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="span2">
+                  <label className="field">
+                    ZIP Code
+                    <input
+                      className="input"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="span4">
+                  <label className="field">
+                    City
+                    <input
+                      className="input"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="span2">
+                  <label className="field">
+                    State
+                    <input
+                      className="input"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, cursor: 'pointer', fontSize: 13 }}>
                 <input
-                  className="input"
-                  value={phoneInput}
-                  onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="(301) 555-0101"
+                  type="checkbox"
+                  checked={isSavedInfoEnabled}
+                  onChange={(e) => setIsSavedInfoEnabled(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: 'var(--navy-900)' }}
                 />
+                <span>Save this information for future 1-click orders</span>
               </label>
             </div>
 
@@ -262,12 +388,9 @@ export default function AccountPage() {
               </button>
               <button
                 className="btn btn-primary"
-                onClick={() => {
-                  alert('Profile updated');
-                  setIsEditProfileOpen(false);
-                }}
+                onClick={handleSaveProfile}
               >
-                Save
+                Save profile
               </button>
             </div>
           </div>

@@ -19,7 +19,12 @@ import {
   Bell,
   Power,
   CheckCircle2,
+  Camera,
+  Upload,
+  Tag,
+  Radio,
 } from 'lucide-react';
+import { getSocket } from '../../lib/socket';
 
 export default function MerchantPortalPage() {
   const router = useRouter();
@@ -49,8 +54,15 @@ export default function MerchantPortalPage() {
     unit: '1 lb',
     stock: 25,
     emoji: '🛒',
+    image_url: '',
     description: '',
+    is_on_sale: false,
+    sale_price_cents: 639,
+    promo_badge: '20% OFF',
   });
+
+  const [promotionsEnabled, setPromotionsEnabled] = useState(true);
+  const [broadcastNotice, setBroadcastNotice] = useState<any>(null);
 
   // Store profile form
   const [storeForm, setStoreForm] = useState({
@@ -142,6 +154,25 @@ export default function MerchantPortalPage() {
       if (ordRes.ok) setOrders(await ordRes.json());
       if (prodRes.ok) setProducts(await prodRes.json());
       if (payRes.ok) setPayouts(await payRes.json());
+
+      // Fetch marketplace settings for promotions & broadcasts
+      try {
+        const setRes = await fetch('/api/settings');
+        if (setRes.ok) {
+          const setMap = await setRes.json();
+          if (setMap.merchant_promotions_enabled !== undefined) {
+            setPromotionsEnabled(setMap.merchant_promotions_enabled !== 'false');
+          }
+          if (setMap.latest_broadcast) {
+            try {
+              const parsed = JSON.parse(setMap.latest_broadcast);
+              if (parsed && (parsed.target === 'merchants' || parsed.target === 'both')) {
+                setBroadcastNotice(parsed);
+              }
+            } catch {}
+          }
+        }
+      } catch {}
     } catch (err) {
       console.error(err);
     } finally {
@@ -154,6 +185,20 @@ export default function MerchantPortalPage() {
     const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
   }, [user]);
+
+  // Real-time broadcast announcements over WebSocket
+  useEffect(() => {
+    const socket = getSocket();
+    const handleBroadcast = (ann: any) => {
+      if (ann && (ann.target === 'merchants' || ann.target === 'both')) {
+        setBroadcastNotice(ann);
+      }
+    };
+    socket.on('broadcast:announcement', handleBroadcast);
+    return () => {
+      socket.off('broadcast:announcement', handleBroadcast);
+    };
+  }, []);
 
   const updateOrderStatus = async (orderId: number, status: string, bagCount?: number) => {
     const token = localStorage.getItem('bd_token');
@@ -172,6 +217,70 @@ export default function MerchantPortalPage() {
     }
   };
 
+  const parseProductPromo = (prod: any) => {
+    if (!prod) return { isOnSale: false, salePriceCents: 0, badge: '' };
+    const desc = prod.description || '';
+    const match = desc.match(/\[ON_SALE:(\d+)\|?([^\]]*)\]/);
+    if (match) {
+      return {
+        isOnSale: true,
+        salePriceCents: Number(match[1]),
+        badge: match[2] || 'SALE',
+      };
+    }
+    return { isOnSale: false, salePriceCents: 0, badge: '' };
+  };
+
+  const openEditModal = (p?: any) => {
+    if (p && p.id) {
+      const promo = parseProductPromo(p);
+      setEditingProduct(p);
+      setProdForm({
+        name: p.name || '',
+        category: p.category || 'General',
+        price_cents: p.price_cents || 799,
+        unit: p.unit || 'each',
+        stock: p.stock ?? 25,
+        emoji: p.emoji || '🛒',
+        image_url: p.image_url || '',
+        description: (p.description || '').replace(/\[ON_SALE:[^\]]*\]/g, '').trim(),
+        is_on_sale: promo.isOnSale,
+        sale_price_cents: promo.salePriceCents || Math.round((p.price_cents || 799) * 0.8),
+        promo_badge: promo.badge || '20% OFF',
+      });
+    } else {
+      setEditingProduct({});
+      setProdForm({
+        name: '',
+        category: 'Pantry',
+        price_cents: 799,
+        unit: '1 lb',
+        stock: 25,
+        emoji: '🛒',
+        image_url: '',
+        description: '',
+        is_on_sale: false,
+        sale_price_cents: 639,
+        promo_badge: '20% OFF',
+      });
+    }
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Photo file must be smaller than 5 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setProdForm((prev) => ({ ...prev, image_url: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('bd_token');
@@ -180,10 +289,26 @@ export default function MerchantPortalPage() {
     const method = isEdit ? 'PUT' : 'POST';
 
     try {
+      let cleanDescription = (prodForm.description || '').replace(/\[ON_SALE:[^\]]*\]/g, '').trim();
+      if (prodForm.is_on_sale) {
+        cleanDescription = `${cleanDescription} [ON_SALE:${prodForm.sale_price_cents || prodForm.price_cents}|${prodForm.promo_badge || 'SALE'}]`.trim();
+      }
+
+      const payload = {
+        name: prodForm.name,
+        category: prodForm.category,
+        price_cents: Number(prodForm.price_cents),
+        unit: prodForm.unit,
+        stock: Number(prodForm.stock),
+        emoji: prodForm.emoji,
+        image_url: prodForm.image_url || null,
+        description: cleanDescription,
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(prodForm),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         setEditingProduct(null);
@@ -522,6 +647,42 @@ export default function MerchantPortalPage() {
           </div>
         </div>
 
+        {/* Targeted Admin Broadcast Announcement Banner */}
+        {broadcastNotice && (
+          <div
+            style={{
+              margin: '14px 24px 0',
+              padding: '12px 18px',
+              borderRadius: 10,
+              background: '#0F172A',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              border: '1px solid var(--gold-metal, #D4A017)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>📢</span>
+              <div>
+                <strong style={{ color: 'var(--gold-metal, #D4A017)', fontSize: 13, textTransform: 'uppercase' }}>
+                  {broadcastNotice.title || 'Administrative Notice'}:
+                </strong>{' '}
+                <span style={{ fontSize: 13, color: '#f1f5f9' }}>{broadcastNotice.message}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setBroadcastNotice(null)}
+              style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}
+              aria-label="Dismiss announcement"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Body View */}
         <div className="main-body">
           {/* SCREEN 1: KITCHEN ORDER QUEUE (KANBAN) */}
@@ -780,10 +941,7 @@ export default function MerchantPortalPage() {
                 </div>
                 <button
                   className="btn btn-gold"
-                  onClick={() => {
-                    setEditingProduct({});
-                    setProdForm({ name: '', category: 'Pantry', price_cents: 799, unit: '1 lb', stock: 25, emoji: '📦', description: '' });
-                  }}
+                  onClick={() => openEditModal()}
                 >
                   + Add product
                 </button>
@@ -804,46 +962,66 @@ export default function MerchantPortalPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {products.map((p) => (
-                        <tr key={p.id}>
-                          <td>
-                            <div className="row">
-                              <span style={{ fontSize: 24, width: 36 }}>{p.emoji || '🛒'}</span>
-                              <b>{p.name}</b>
-                            </div>
-                          </td>
-                          <td>{p.category}</td>
-                          <td className="num">${(p.price_cents / 100).toFixed(2)}</td>
-                          <td className="muted">{p.unit}</td>
-                          <td className="num">
-                            <span className={`badge ${p.stock < 10 ? 'b-amber' : 'b-green'}`}>
-                              {p.stock}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="badge b-green">Live</span>
-                          </td>
-                          <td className="right">
-                            <button
-                              className="btn btn-ghost btn-sm"
-                              onClick={() => {
-                                setEditingProduct(p);
-                                setProdForm({
-                                  name: p.name,
-                                  category: p.category,
-                                  price_cents: p.price_cents,
-                                  unit: p.unit || 'each',
-                                  stock: p.stock,
-                                  emoji: p.emoji || '🛒',
-                                  description: p.description || '',
-                                });
-                              }}
-                            >
-                              Edit
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {products.map((p) => {
+                        const promo = parseProductPromo(p);
+                        return (
+                          <tr key={p.id}>
+                            <td>
+                              <div className="row" style={{ alignItems: 'center', gap: 10 }}>
+                                {p.image_url ? (
+                                  <img
+                                    src={p.image_url}
+                                    alt={p.name}
+                                    style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 6, flex: 'none' }}
+                                  />
+                                ) : (
+                                  <span style={{ fontSize: 24, width: 36, textAlign: 'center' }}>{p.emoji || '🛒'}</span>
+                                )}
+                                <div>
+                                  <b>{p.name}</b>
+                                  {promo.isOnSale && (
+                                    <span className="badge b-gold" style={{ marginLeft: 8, fontSize: 10, padding: '2px 6px' }}>
+                                      {promo.badge || 'SALE'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td>{p.category}</td>
+                            <td className="num">
+                              {promo.isOnSale ? (
+                                <div>
+                                  <span style={{ textDecoration: 'line-through', color: 'var(--muted)', fontSize: 12, marginRight: 6 }}>
+                                    ${(p.price_cents / 100).toFixed(2)}
+                                  </span>
+                                  <strong style={{ color: '#b91c1c' }}>
+                                    ${(promo.salePriceCents / 100).toFixed(2)}
+                                  </strong>
+                                </div>
+                              ) : (
+                                `$${(p.price_cents / 100).toFixed(2)}`
+                              )}
+                            </td>
+                            <td className="muted">{p.unit}</td>
+                            <td className="num">
+                              <span className={`badge ${p.stock < 10 ? 'b-amber' : 'b-green'}`}>
+                                {p.stock}
+                              </span>
+                            </td>
+                            <td>
+                              <span className="badge b-green">Live</span>
+                            </td>
+                            <td className="right">
+                              <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => openEditModal(p)}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1062,7 +1240,14 @@ export default function MerchantPortalPage() {
               <div>
                 <div className="tiny muted strong">DELIVERY</div>
                 <div className="strong">{detailOrder.delivery_windows?.label}</div>
-                <div className="small">{detailOrder.users_orders_customer_idTousers?.name}</div>
+                <div className="small">
+                  {(() => {
+                    const rawName = detailOrder.users_orders_customer_idTousers?.name;
+                    if (!rawName) return 'Customer';
+                    const parts = rawName.trim().split(/\s+/);
+                    return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+                  })()}
+                </div>
               </div>
               <div>
                 <div className="tiny muted strong">PACKAGING</div>
@@ -1111,9 +1296,110 @@ export default function MerchantPortalPage() {
 
       {/* EDIT PRODUCT MODAL */}
       {editingProduct && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <form className="card form-grid" onSubmit={handleSaveProduct} style={{ maxWidth: 520, width: '90%', padding: 24 }}>
-            <h3 className="span6">{editingProduct.id ? 'Edit product' : 'Add product'}</h3>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
+          <form className="card form-grid" onSubmit={handleSaveProduct} style={{ maxWidth: 580, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 24, borderRadius: 16 }}>
+            <div className="span6 row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <h3 style={{ margin: 0, fontSize: 20 }}>{editingProduct.id ? 'Edit product' : 'Add new product'}</h3>
+              <span className="badge b-gold" style={{ fontSize: 11 }}>Accra Market Catalog</span>
+            </div>
+
+            {/* PRODUCT PHOTO CAPTURE & UPLOAD */}
+            <div className="span6" style={{ background: '#f8fafc', padding: 14, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#334155', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Camera size={16} style={{ color: 'var(--gold-metal, #D4A017)' }} />
+                Product Photo Capture & Upload
+              </div>
+              <div className="row" style={{ alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                {prodForm.image_url ? (
+                  <div style={{ position: 'relative', width: 72, height: 72, flex: 'none' }}>
+                    <img
+                      src={prodForm.image_url}
+                      alt="Product preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, border: '2px solid var(--gold-metal, #D4A017)' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setProdForm({ ...prodForm, image_url: '' })}
+                      style={{
+                        position: 'absolute',
+                        top: -6,
+                        right: -6,
+                        background: '#ef4444',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 20,
+                        height: 20,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        lineHeight: 1,
+                      }}
+                      title="Remove photo"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: 8,
+                      background: '#e2e8f0',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 11,
+                      color: '#64748b',
+                      flex: 'none',
+                      border: '1.5px dashed #cbd5e1',
+                    }}
+                  >
+                    <span style={{ fontSize: 24 }}>{prodForm.emoji || '📷'}</span>
+                    <span>No photo</span>
+                  </div>
+                )}
+
+                <div className="stack" style={{ gap: 6, flex: 1, minWidth: 200 }}>
+                  <label
+                    htmlFor="merchant-prod-photo"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 14px',
+                      background: '#fff',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#0f172a',
+                      cursor: 'pointer',
+                      width: 'fit-content',
+                    }}
+                  >
+                    <Camera size={15} />
+                    <span>{prodForm.image_url ? 'Retake / Change Photo' : 'Take Photo or Choose File'}</span>
+                  </label>
+                  <input
+                    id="merchant-prod-photo"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handlePhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <span className="tiny muted">
+                    JPG, PNG, or mobile camera capture (max 5 MB).
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <label className="field span4">
               Product name
               <input className="input" required value={prodForm.name} onChange={(e) => setProdForm({ ...prodForm, name: e.target.value })} />
@@ -1123,7 +1409,7 @@ export default function MerchantPortalPage() {
               <input className="input" value={prodForm.emoji} onChange={(e) => setProdForm({ ...prodForm, emoji: e.target.value })} />
             </label>
             <label className="field span2">
-              Price ($)
+              Regular Price ($)
               <input
                 className="input"
                 type="number"
@@ -1134,18 +1420,80 @@ export default function MerchantPortalPage() {
               />
             </label>
             <label className="field span2">
-              Unit
+              Unit (e.g. 1 lb, bunch, 16 oz)
               <input className="input" value={prodForm.unit} onChange={(e) => setProdForm({ ...prodForm, unit: e.target.value })} />
             </label>
             <label className="field span2">
-              Stock
+              Stock available
               <input className="input" type="number" value={prodForm.stock} onChange={(e) => setProdForm({ ...prodForm, stock: parseInt(e.target.value) || 0 })} />
             </label>
             <label className="field span6">
               Category
               <input className="input" value={prodForm.category} onChange={(e) => setProdForm({ ...prodForm, category: e.target.value })} />
             </label>
-            <div className="span6 row" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+
+            {/* ON SALE & PROMOTIONAL DISCOUNT FEATURE */}
+            {promotionsEnabled && (
+              <div className="span6" style={{ background: prodForm.is_on_sale ? '#fffbeb' : '#f8fafc', padding: 14, borderRadius: 10, border: `1px solid ${prodForm.is_on_sale ? '#fde68a' : '#e2e8f0'}`, transition: 'all 0.2s' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: prodForm.is_on_sale ? 12 : 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={prodForm.is_on_sale}
+                    onChange={(e) => setProdForm({
+                      ...prodForm,
+                      is_on_sale: e.target.checked,
+                      sale_price_cents: prodForm.sale_price_cents || Math.round(prodForm.price_cents * 0.8),
+                    })}
+                    style={{ width: 18, height: 18, accentColor: 'var(--gold-metal, #D4A017)' }}
+                  />
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#92400e', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Tag size={15} /> Put on Sale / Promotional Discount
+                    </span>
+                    <span className="tiny muted" style={{ display: 'block' }}>
+                      Feature this product with a discounted sale price and promo tag in customer search.
+                    </span>
+                  </div>
+                </label>
+
+                {prodForm.is_on_sale && (
+                  <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+                    <label className="field" style={{ flex: 1, minWidth: 160 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Sale Price ($)</span>
+                      <input
+                        className="input"
+                        type="number"
+                        step="0.01"
+                        required={prodForm.is_on_sale}
+                        value={(prodForm.sale_price_cents / 100).toFixed(2)}
+                        onChange={(e) => setProdForm({ ...prodForm, sale_price_cents: Math.round(parseFloat(e.target.value || '0') * 100) })}
+                        style={{ borderColor: '#fde68a', fontWeight: 700, color: '#b91c1c' }}
+                      />
+                    </label>
+
+                    <label className="field" style={{ flex: 1, minWidth: 160 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#92400e' }}>Promo Tag / Badge</span>
+                      <input
+                        className="input"
+                        placeholder="e.g. 20% OFF, SALE, SPECIAL"
+                        value={prodForm.promo_badge}
+                        onChange={(e) => setProdForm({ ...prodForm, promo_badge: e.target.value })}
+                        style={{ borderColor: '#fde68a' }}
+                      />
+                    </label>
+
+                    <div style={{ width: '100%', fontSize: 12, color: '#78350f', background: 'rgba(217, 119, 6, 0.1)', padding: '6px 10px', borderRadius: 6 }}>
+                      Customers will see: <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>${(prodForm.price_cents / 100).toFixed(2)}</span>{' '}
+                      <strong style={{ color: '#b91c1c' }}>${(prodForm.sale_price_cents / 100).toFixed(2)}</strong>{' '}
+                      <span className="badge b-gold" style={{ fontSize: 10 }}>{prodForm.promo_badge || 'SALE'}</span>{' '}
+                      ({Math.round(((prodForm.price_cents - prodForm.sale_price_cents) / Math.max(1, prodForm.price_cents)) * 100)}% savings)
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="span6 row" style={{ justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
               <button type="button" className="btn btn-ghost" onClick={() => setEditingProduct(null)}>Cancel</button>
               <button type="submit" className="btn btn-primary">Save product</button>
             </div>

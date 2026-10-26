@@ -29,27 +29,53 @@ export default function CartCheckoutPage() {
   const [state, setState] = useState('MD');
   const [zip, setZip] = useState('20910');
   const [phone, setPhone] = useState('(301) 555-0199');
-  const [notes, setNotes] = useState('Leave on the front porch.');
+  const [notes, setNotes] = useState('Leave on the front porch');
   const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
   const [cardExp, setCardExp] = useState('12/28');
   const [cardCvc, setCardCvc] = useState('123');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [minSubtotalCents, setMinSubtotalCents] = useState(1500);
+  const [differentAddress, setDifferentAddress] = useState(false);
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
+  const [saveInfo, setSaveInfo] = useState(true);
 
   useEffect(() => {
-    async function loadWindows() {
+    async function loadData() {
       try {
-        const res = await fetch('/api/windows');
+        const [res, setRes] = await Promise.all([
+          fetch('/api/windows'),
+          fetch('/api/settings').catch(() => null),
+        ]);
         if (res.ok) {
           const data = await res.json();
           setWindows(data);
           if (data.length > 0) setSelectedWindowId(data[0].id);
         }
+        if (setRes && setRes.ok) {
+          const st = await setRes.json();
+          if (st.minimum_delivery_subtotal_cents) {
+            setMinSubtotalCents(Number(st.minimum_delivery_subtotal_cents) || 1500);
+          }
+        }
       } catch (err) {
-        console.error('Failed to load delivery windows', err);
+        console.error('Failed to load windows/settings', err);
       }
+
+      try {
+        const saved = localStorage.getItem('bd_saved_profile');
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.addressLine1) setAddressLine1(p.addressLine1);
+          if (p.city) setCity(p.city);
+          if (p.state) setState(p.state);
+          if (p.zip) setZip(p.zip);
+          if (p.phone) setPhone(p.phone);
+        }
+      } catch {}
     }
-    loadWindows();
+    loadData();
   }, []);
 
   const totalCents = subtotalCents + deliveryFeeCents + serviceFeeCents + tipCents;
@@ -62,8 +88,8 @@ export default function CartCheckoutPage() {
       return;
     }
 
-    if (subtotalCents < 1500) {
-      setErrorMsg('Minimum merchandise subtotal is $15.00 before checkout');
+    if (subtotalCents < minSubtotalCents) {
+      setErrorMsg(`Minimum merchandise subtotal is $${(minSubtotalCents / 100).toFixed(2)} before checkout`);
       return;
     }
 
@@ -86,6 +112,10 @@ export default function CartCheckoutPage() {
     setSubmitting(true);
 
     try {
+      const finalNotes = differentAddress && recipientName
+        ? `Deliver to: ${recipientName}${recipientPhone ? ` (${recipientPhone})` : ''}. Notes: ${notes}`
+        : notes;
+
       const res = await fetch('/api/orders/checkout', {
         method: 'POST',
         headers: {
@@ -101,7 +131,7 @@ export default function CartCheckoutPage() {
           state,
           zip,
           phone,
-          notes,
+          notes: finalNotes,
           paymentMethod,
         }),
       });
@@ -109,6 +139,15 @@ export default function CartCheckoutPage() {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.message || 'Checkout failed');
+      }
+
+      if (saveInfo) {
+        try {
+          localStorage.setItem(
+            'bd_saved_profile',
+            JSON.stringify({ addressLine1, city, state, zip, phone })
+          );
+        } catch {}
       }
 
       const result = await res.json();
@@ -296,7 +335,7 @@ export default function CartCheckoutPage() {
                 
                 {/* 1-Tap Quick Delivery Instruction Chips */}
                 <div style={{ marginTop: 8 }}>
-                  <div className="tiny muted strong" style={{ marginBottom: 6 }}>Quick instructions:</div>
+                  <div className="tiny muted strong" style={{ marginBottom: 6 }}>Quick instructions (select one):</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                     {[
                       { emoji: '🚪', text: 'Leave at front door' },
@@ -305,22 +344,22 @@ export default function CartCheckoutPage() {
                       { emoji: '🏢', text: 'Leave with concierge' },
                       { emoji: '📞', text: 'Call me upon arrival' },
                     ].map((chip) => {
-                      const isActive = notes.includes(chip.text);
+                      const isActive = notes === chip.text;
                       return (
                         <button
                           key={chip.text}
                           type="button"
                           onClick={() => {
                             if (isActive) {
-                              setNotes(notes.replace(chip.text, '').replace(/^,\s*|,\s*$/g, '').trim());
+                              setNotes('');
                             } else {
-                              setNotes(notes ? `${notes.trim()}, ${chip.text}` : chip.text);
+                              setNotes(chip.text);
                             }
                           }}
                           style={{
                             background: isActive ? 'var(--navy-950, #0B1F4B)' : '#F1F5F9',
                             color: isActive ? '#FFFFFF' : 'var(--ink, #0B1F4B)',
-                            border: `1px solid ${isActive ? 'var(--navy-950, #0B1F4B)' : '#E2E8F0'}`,
+                            border: `1.5px solid ${isActive ? 'var(--navy-950, #0B1F4B)' : '#E2E8F0'}`,
                             borderRadius: 16,
                             padding: '4px 10px',
                             fontSize: 12,
@@ -339,6 +378,60 @@ export default function CartCheckoutPage() {
                     })}
                   </div>
                 </div>
+
+                {/* Save info checkbox */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, cursor: 'pointer', fontSize: 13, userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={saveInfo}
+                    onChange={(e) => setSaveInfo(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: 'var(--navy-900)' }}
+                  />
+                  <span>Save my contact and address details for future orders</span>
+                </label>
+
+                {/* Different address toggle */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer', fontSize: 13, userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={differentAddress}
+                    onChange={(e) => setDifferentAddress(e.target.checked)}
+                    style={{ width: 16, height: 16, accentColor: 'var(--navy-900)' }}
+                  />
+                  <span><strong>Deliver to a different person or gift recipient</strong></span>
+                </label>
+
+                {differentAddress && (
+                  <div style={{ marginTop: 12, padding: 12, background: 'var(--surface-2)', borderRadius: 12, border: '1px solid var(--line)' }}>
+                    <div className="small strong" style={{ marginBottom: 8, color: 'var(--navy-950)' }}>
+                      🎁 Recipient Contact Details
+                    </div>
+                    <div className="form-grid" style={{ gap: 8 }}>
+                      <div className="span3">
+                        <label className="field" style={{ fontSize: 12 }}>
+                          Recipient Full Name
+                          <input
+                            className="input"
+                            placeholder="e.g. Ama Mensah"
+                            value={recipientName}
+                            onChange={(e) => setRecipientName(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                      <div className="span3">
+                        <label className="field" style={{ fontSize: 12 }}>
+                          Recipient Phone Number
+                          <input
+                            className="input"
+                            placeholder="e.g. (240) 555-0188"
+                            value={recipientPhone}
+                            onChange={(e) => setRecipientPhone(e.target.value)}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -356,6 +449,7 @@ export default function CartCheckoutPage() {
                 { label: '$5.00', val: 500 },
                 { label: '$8.00', val: 800 },
                 { label: '$10.00', val: 1000 },
+                { label: '$20.00', val: 2000 },
               ].map((t) => (
                 <button
                   key={t.val}
@@ -430,6 +524,10 @@ export default function CartCheckoutPage() {
                 </button>
               </div>
 
+              <div className="tiny muted center" style={{ marginTop: 8, textAlign: 'center' }}>
+                Pay securely with mobile wallet, card, or phone QR scan
+              </div>
+
               <div className="divider">or pay with card</div>
 
               {/* Card Inputs */}
@@ -461,11 +559,11 @@ export default function CartCheckoutPage() {
                 disabled={submitting}
                 onClick={() => handleCheckout('card')}
               >
-                {submitting ? 'Processing Stripe Escrow...' : `Place Order · $${(totalCents / 100).toFixed(2)}`}
+                {submitting ? 'Processing Payment...' : `Place Order · $${(totalCents / 100).toFixed(2)}`}
               </button>
 
               <div className="secure">
-                🔒 256-bit encrypted · Stripe 3D-Secure · Funds held in escrow until Saturday delivery
+                🔒 256-bit encrypted · Stripe 3D-Secure · Direct payout on normal schedule
               </div>
             </div>
           </div>

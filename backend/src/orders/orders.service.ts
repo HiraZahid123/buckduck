@@ -94,8 +94,13 @@ export class OrdersService {
   async createCheckout(customerId: number, dto: CreateOrderDto) {
     const valuation = await this.calculateFees(dto.items, dto.tipCents);
 
-    if (valuation.subtotalCents < 1500) {
-      throw new BadRequestException('Minimum merchandise order is $15.00');
+    const minSetting = await this.prisma.settings.findUnique({
+      where: { key: 'minimum_delivery_subtotal_cents' },
+    });
+    const minSubtotalCents = minSetting && !isNaN(Number(minSetting.value)) ? Number(minSetting.value) : 1500;
+
+    if (valuation.subtotalCents < minSubtotalCents) {
+      throw new BadRequestException(`Minimum merchandise order is $${(minSubtotalCents / 100).toFixed(2)}`);
     }
 
     const window = await this.prisma.delivery_windows.findUnique({

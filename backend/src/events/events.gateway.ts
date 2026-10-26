@@ -48,4 +48,15 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.server.emit('order:status', { orderId, status, driverId });
     }
   }
+
+  emitAnnouncement(target: 'merchants' | 'drivers' | 'both', message: string, title?: string) {
+    if (this.server) {
+      this.server.emit('broadcast:announcement', {
+        target,
+        title: title || 'BuckDuck Notice',
+        message,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
 }

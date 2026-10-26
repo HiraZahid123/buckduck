@@ -10,6 +10,7 @@ import { DriverModule } from './driver/driver.module';
 import { AdminModule } from './admin/admin.module';
 import { SettingsModule } from './settings/settings.module';
 import { EventsModule } from './events/events.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { EventsModule } from './events/events.module';
     AdminModule,
     SettingsModule,
     EventsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule {}

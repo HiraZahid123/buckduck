@@ -22,6 +22,16 @@ export default function DriverAppPage() {
   const [proofNote, setProofNote] = useState('Handed to customer');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<Record<number, boolean>>({});
+  const [sendSmsNotice, setSendSmsNotice] = useState(true);
+  const [smsDeliveryAlert, setSmsDeliveryAlert] = useState('');
+  const [broadcastNotice, setBroadcastNotice] = useState<any>(null);
+
+  const formatCustomerName = (fullName?: string) => {
+    if (!fullName) return 'Customer';
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`;
+  };
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,6 +65,22 @@ export default function DriverAppPage() {
       if (jobsRes.ok) setJobBoard(await jobsRes.json());
       if (routeRes.ok) setActiveRoute(await routeRes.json());
       if (earnRes.ok) setEarnings(await earnRes.json());
+
+      // Fetch latest broadcast announcement
+      try {
+        const setRes = await fetch('/api/settings');
+        if (setRes.ok) {
+          const setMap = await setRes.json();
+          if (setMap.latest_broadcast) {
+            try {
+              const parsed = JSON.parse(setMap.latest_broadcast);
+              if (parsed && (parsed.target === 'drivers' || parsed.target === 'both')) {
+                setBroadcastNotice(parsed);
+              }
+            } catch {}
+          }
+        }
+      } catch {}
     } catch (err) {
       console.error('Driver data error', err);
     } finally {
@@ -96,7 +122,7 @@ export default function DriverAppPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Real-time WebSocket connection to receive live fleet updates
+  // Real-time WebSocket connection to receive live fleet updates & broadcasts
   useEffect(() => {
     const socket = getSocket();
 
@@ -106,10 +132,18 @@ export default function DriverAppPage() {
       }
     };
 
+    const handleBroadcast = (ann: any) => {
+      if (ann && (ann.target === 'drivers' || ann.target === 'both')) {
+        setBroadcastNotice(ann);
+      }
+    };
+
     socket.on('driver:status', handleDriverStatus);
+    socket.on('broadcast:announcement', handleBroadcast);
 
     return () => {
       socket.off('driver:status', handleDriverStatus);
+      socket.off('broadcast:announcement', handleBroadcast);
     };
   }, [user]);
 
@@ -177,6 +211,7 @@ export default function DriverAppPage() {
   const completeDelivery = async () => {
     if (!deliverModalOrder) return;
     const token = localStorage.getItem('bd_token');
+    const custName = formatCustomerName(deliverModalOrder.users_orders_customer_idTousers?.name);
     try {
       const res = await fetch(`/api/driver/orders/${deliverModalOrder.id}/deliver`, {
         method: 'POST',
@@ -187,6 +222,10 @@ export default function DriverAppPage() {
         }),
       });
       if (res.ok) {
+        if (sendSmsNotice) {
+          setSmsDeliveryAlert(`✓ Delivery confirmation and proof photo dispatched to ${custName} via SMS!`);
+          setTimeout(() => setSmsDeliveryAlert(''), 6000);
+        }
         setDeliverModalOrder(null);
         setCapturedPhoto(null);
         await loadDriverData();
@@ -381,6 +420,58 @@ export default function DriverAppPage() {
 
         {/* DRIVER BODY */}
         <div className="d-body">
+          {/* Targeted Admin Announcement Banner */}
+          {broadcastNotice && (
+            <div
+              style={{
+                margin: '8px 0 12px',
+                padding: '10px 14px',
+                borderRadius: 10,
+                background: '#0F172A',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                border: '1px solid var(--gold-metal, #D4A017)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                <span style={{ fontSize: 18 }}>📢</span>
+                <div>
+                  <strong style={{ color: 'var(--gold-metal, #D4A017)', textTransform: 'uppercase' }}>
+                    {broadcastNotice.title || 'BuckDuck Notice'}:
+                  </strong>{' '}
+                  <span style={{ color: '#f1f5f9' }}>{broadcastNotice.message}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setBroadcastNotice(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: 16 }}
+                aria-label="Dismiss announcement"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {smsDeliveryAlert && (
+            <div
+              style={{
+                margin: '8px 0 12px',
+                padding: '10px 14px',
+                borderRadius: 10,
+                background: 'rgba(34, 197, 94, 0.15)',
+                color: '#15803d',
+                border: '1px solid #86efac',
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              {smsDeliveryAlert}
+            </div>
+          )}
           {/* ================= VIEW 1: HOME ================= */}
           {subView === 'home' && (
             <>
@@ -581,11 +672,16 @@ export default function DriverAppPage() {
                       {stop.delivery_windows?.label || 'Saturday · 12 PM–4 PM'}
                     </div>
 
-                    {/* Store pickup leg */}
+                    {/* Store pickup leg (with Multi-Store batch support) */}
                     <div className="leg">
                       <div className="pin pick">🏪</div>
                       <div className="grow">
-                        <div className="strong">{stop.stores?.name || 'Store'}</div>
+                        <div className="row between">
+                          <div className="strong">{stop.stores?.name || 'Local Store'}</div>
+                          <span className="badge b-gold" style={{ fontSize: 10, fontWeight: 700 }}>
+                            🛍️ {stop.bags || 1} Bag{(stop.bags || 1) > 1 ? 's' : ''}
+                          </span>
+                        </div>
                         <div className="tiny muted">{saddr}</div>
                         <div className="row wrap mt8" style={{ gap: 6 }}>
                           <a
@@ -614,7 +710,10 @@ export default function DriverAppPage() {
                     <div className="leg">
                       <div className="pin drop">🏠</div>
                       <div className="grow">
-                        <div className="strong">{stop.users_orders_customer_idTousers?.name || 'Customer'}</div>
+                        <div className="row between">
+                          <div className="strong">{formatCustomerName(stop.users_orders_customer_idTousers?.name)}</div>
+                          <span className="badge b-blue" style={{ fontSize: 10 }}>Customer Drop</span>
+                        </div>
                         <div className="tiny muted">
                           {caddr}
                           {stop.address_line2 ? ` · ${stop.address_line2}` : ''}
@@ -634,7 +733,7 @@ export default function DriverAppPage() {
                               <a
                                 className="btn btn-sm btn-gold"
                                 style={{ padding: '3px 8px', fontSize: 11 }}
-                                href={`sms:${stop.phone}?&body=${encodeURIComponent("Hi " + (stop.users_orders_customer_idTousers?.name?.split(' ')[0] || 'there') + ", this is your BuckDuck driver! I have arrived with your Saturday grocery delivery from " + (stop.stores?.name || 'your local grocer') + ".")}`}
+                                href={`sms:${stop.phone}?&body=${encodeURIComponent("Hi " + formatCustomerName(stop.users_orders_customer_idTousers?.name) + ", this is your BuckDuck driver! I have arrived with your Saturday grocery delivery from " + (stop.stores?.name || 'your local grocer') + ".")}`}
                               >
                                 💬 SMS Arrival
                               </a>
@@ -946,6 +1045,40 @@ export default function DriverAppPage() {
                     style={{ display: 'none' }}
                     onChange={handlePhotoCapture}
                   />
+                </div>
+
+                {/* Send SMS Delivery Confirmation */}
+                <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: 10, border: '1px solid #e2e8f0', marginTop: 10 }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={sendSmsNotice}
+                      onChange={(e) => setSendSmsNotice(e.target.checked)}
+                      style={{ width: 18, height: 18, marginTop: 2, accentColor: '#16a34a' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>
+                        💬 Send photo & delivery confirmation via SMS to customer
+                      </div>
+                      <div className="tiny muted" style={{ marginTop: 2 }}>
+                        Customer ({formatCustomerName(deliverModalOrder.users_orders_customer_idTousers?.name)}) will receive an SMS drop-off notification with verified photo.
+                      </div>
+                    </div>
+                  </label>
+
+                  {sendSmsNotice && deliverModalOrder.phone && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px dashed #cbd5e1' }}>
+                      <a
+                        className="btn btn-sm btn-gold btn-block"
+                        style={{ fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                        href={`sms:${deliverModalOrder.phone}?&body=${encodeURIComponent(
+                          `Hi ${formatCustomerName(deliverModalOrder.users_orders_customer_idTousers?.name)}, your BuckDuck grocery delivery from ${deliverModalOrder.stores?.name || 'your local store'} has arrived! Drop location: ${proofNote}. Sealed bags verified. Thank you!`
+                        )}`}
+                      >
+                        📱 Open Phone SMS App with Proof Text
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
 

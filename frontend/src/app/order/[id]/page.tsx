@@ -283,6 +283,14 @@ export default function OrderTrackingPage() {
 
           <div className="mt16 small">
             <div className="strong" style={{ marginBottom: 4 }}>Deliver to</div>
+            <div className="strong" style={{ color: 'var(--navy-950)', marginBottom: 2 }}>
+              {(() => {
+                const rawName = order.users_orders_customer_idTousers?.name || user?.name;
+                if (!rawName) return 'Customer';
+                const parts = rawName.trim().split(/\s+/);
+                return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+              })()}
+            </div>
             <div>{order.address_line1}</div>
             {order.address_line2 && <div>{order.address_line2}</div>}
             <div className="muted">{order.city}, {order.state} {order.zip}</div>

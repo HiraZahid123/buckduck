@@ -1,9 +1,14 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class MerchantService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async getStoreForUser(userId: number) {
     const store = await this.prisma.stores.findFirst({
@@ -112,6 +117,12 @@ export class MerchantService {
         order_items: true,
         delivery_windows: true,
       },
+    });
+
+    // Send automated email notification to customer
+    await this.notificationsService.notifyOrderStatusChange(order.id, status, {
+      note: status === 'ready' ? `Marked ready with ${bagCount || order.bags} bag(s)` : undefined,
+      bags: bagCount || order.bags,
     });
 
     return updated;
