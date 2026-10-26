@@ -180,14 +180,14 @@ export default function CartDrawer() {
               <p className="muted small" style={{ margin: 0, maxWidth: 260 }}>
                 Explore plantains, palm oil, fresh goat meat, and authentic staples from local markets.
               </p>
-              <button
-                type="button"
+              <Link
+                href="/stores"
                 className="btn btn-gold btn-sm"
-                style={{ marginTop: 12 }}
+                style={{ marginTop: 12, textDecoration: 'none', display: 'inline-block' }}
                 onClick={closeDrawer}
               >
                 Start Shopping
-              </button>
+              </Link>
             </div>
           ) : (
             Object.values(storesGrouped).map((group: any) => (
@@ -372,13 +372,14 @@ export default function CartDrawer() {
               Proceed to Checkout →
             </button>
 
-            <button
-              type="button"
+            <Link
+              href="/stores"
               className="btn btn-ghost btn-sm btn-block"
+              style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}
               onClick={closeDrawer}
             >
               Continue Shopping
-            </button>
+            </Link>
           </div>
         )}
       </div>

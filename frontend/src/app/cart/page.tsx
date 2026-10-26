@@ -177,7 +177,7 @@ export default function CartCheckoutPage() {
         <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
         <h2>Your Cart is Empty</h2>
         <p className="muted">Discover authentic foods from African, Caribbean and halal grocers.</p>
-        <Link href="/" className="btn btn-primary" style={{ marginTop: 16 }}>
+        <Link href="/stores" className="btn btn-primary" style={{ marginTop: 16 }}>
           Shop Partner Stores
         </Link>
       </div>
