@@ -98,21 +98,48 @@ export default function StoreDetailPage() {
     <div>
       {/* Store Banner */}
       <div className="store-hero" style={{ background: store.color || '#1E3A8A' }}>
-        <div className="container">
-          <div className="avatar">{store.emoji || '🛒'}</div>
-          <div>
-            <div className="row" style={{ gap: 8, marginBottom: 4 }}>
-              <span className="badge b-gold">{store.category}</span>
-              <span className="badge" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
-                ★ {store.rating || 4.9}
-              </span>
-            </div>
-            <h1 style={{ color: '#fff', fontSize: 32, marginBottom: 4 }}>{store.name}</h1>
-            <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, margin: 0 }}>
-              {store.tagline || store.description}
-            </p>
-            <div className="small" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>
-              📍 {store.address}, {store.city}, {store.state} · 📞 {store.phone} · 📦 Packed in BuckDuck bags
+        <div className="container" style={{ display: 'block' }}>
+          {/* Back to all stores navigation */}
+          <div style={{ marginBottom: 16 }}>
+            <Link
+              href="/stores"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                color: '#FFFFFF',
+                textDecoration: 'none',
+                fontSize: 13,
+                fontWeight: 600,
+                background: 'rgba(0, 0, 0, 0.25)',
+                padding: '6px 14px',
+                borderRadius: 20,
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
+              <span>Back to all stores</span>
+            </Link>
+          </div>
+
+          <div style={{ display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="avatar">{store.emoji || '🛒'}</div>
+            <div>
+              <div className="row" style={{ gap: 8, marginBottom: 4 }}>
+                <span className="badge b-gold">{store.category}</span>
+                <span className="badge" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}>
+                  ★ {store.rating || 4.9}
+                </span>
+              </div>
+              <h1 style={{ color: '#fff', fontSize: 32, marginBottom: 4 }}>{store.name}</h1>
+              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, margin: 0 }}>
+                {store.tagline || store.description}
+              </p>
+              <div className="small" style={{ color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>
+                📍 {store.address}, {store.city}, {store.state} · 📞 {store.phone} · 📦 Packed in BuckDuck bags
+              </div>
             </div>
           </div>
         </div>
