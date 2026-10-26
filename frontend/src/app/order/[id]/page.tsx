@@ -4,11 +4,13 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useCart } from '../../../context/CartContext';
 
 export default function OrderTrackingPage() {
   const params = useParams();
   const orderId = params?.id as string;
   const { user } = useAuth();
+  const { clearCart } = useCart();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -23,6 +25,8 @@ export default function OrderTrackingPage() {
         if (res.ok) {
           const data = await res.json();
           setOrder(data);
+          // Payment successful / order confirmed - clear cart now
+          try { clearCart(); } catch {}
         }
       } catch (err) {
         console.error('Failed to load order', err);

@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
-export default function CartCheckoutPage() {
+function CartCheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isCanceled = searchParams.get('canceled') === 'true';
   const { user, demoLogin } = useAuth();
   const {
     items,
@@ -156,12 +158,13 @@ export default function CartCheckoutPage() {
       }
 
       const result = await res.json();
-      clearCart();
 
       // If backend generated an official Stripe Hosted Checkout URL (checkout.stripe.com)
       if (result.url && result.url.startsWith('http')) {
+        // Keep cart intact so if user cancels or navigates back from Stripe, their items are preserved!
         window.location.href = result.url;
       } else {
+        clearCart();
         const firstOrderId = result.orderId || result.orders?.[0]?.id || 1;
         router.push(result.url || `/order/${firstOrderId}`);
       }
@@ -187,6 +190,31 @@ export default function CartCheckoutPage() {
   return (
     <div className="container" style={{ padding: '36px 20px' }}>
       <h1 style={{ fontSize: 28, marginBottom: 20 }}>Single-Cart Multi-Store Checkout</h1>
+
+      {isCanceled && (
+        <div
+          className="card"
+          style={{
+            background: '#FEF3C7',
+            color: '#92400E',
+            border: '1px solid #FCD34D',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '14px 18px',
+            borderRadius: 12,
+          }}
+        >
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🛍️</span>
+          <div>
+            <strong style={{ display: 'block', fontSize: 14 }}>Payment was canceled on Stripe</strong>
+            <span style={{ fontSize: 13, opacity: 0.9 }}>
+              No charges were made. All your items and Saturday delivery window are safely preserved below so you can proceed whenever you are ready.
+            </span>
+          </div>
+        </div>
+      )}
 
       {errorMsg && (
         <div className="card" style={{ background: 'var(--red-bg)', color: 'var(--red)', marginBottom: 20 }}>
@@ -613,5 +641,20 @@ export default function CartCheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CartCheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container" style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <div className="spin" style={{ margin: '0 auto 12px' }} />
+          <p className="muted">Loading checkout...</p>
+        </div>
+      }
+    >
+      <CartCheckoutContent />
+    </Suspense>
   );
 }
