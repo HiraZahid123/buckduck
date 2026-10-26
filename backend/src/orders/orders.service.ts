@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import Stripe from 'stripe';
 
 export interface CartItemDto {
   productId: number;
@@ -208,11 +209,142 @@ export class OrdersService {
       createdOrders.push(order);
     }
 
+    const firstOrderId = createdOrders[0]?.id || 1;
+
     return {
       success: true,
       checkoutId: checkout.id,
       orders: createdOrders,
+      orderId: firstOrderId,
+      url: `/order/${firstOrderId}`,
       totalCharged: valuation.totalCents,
+    };
+  }
+
+  async createStripeCheckoutSession(customerId: number, dto: CreateOrderDto) {
+    const valuation = await this.calculateFees(dto.items, dto.tipCents);
+
+    const minSetting = await this.prisma.settings.findUnique({
+      where: { key: 'minimum_delivery_subtotal_cents' },
+    });
+    const minSubtotalCents = minSetting && !isNaN(Number(minSetting.value)) ? Number(minSetting.value) : 1500;
+
+    if (valuation.subtotalCents < minSubtotalCents) {
+      throw new BadRequestException(`Minimum merchandise order is $${(minSubtotalCents / 100).toFixed(2)}`);
+    }
+
+    const checkoutResult = await this.createCheckout(customerId, {
+      ...dto,
+      paymentMethod: dto.paymentMethod || 'stripe_checkout',
+    });
+
+    const firstOrderId = checkoutResult.orders?.[0]?.id || 1;
+    const checkoutId = checkoutResult.checkoutId;
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+    if (stripeKey && stripeKey.startsWith('sk_') && !stripeKey.includes('placeholder')) {
+      try {
+        const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
+
+        const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+        for (const grp of valuation.stores) {
+          for (const item of grp.items) {
+            lineItems.push({
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: `${item.product.name} (${grp.store.name})`,
+                  description: `${item.product.unit || 'unit'} · BuckDuck Verified Store`,
+                },
+                unit_amount: item.product.price_cents,
+              },
+              quantity: item.qty,
+            });
+          }
+        }
+
+        if (valuation.deliveryFeeCents > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Batched Saturday Delivery (${valuation.storeCount} Stores)`,
+              },
+              unit_amount: valuation.deliveryFeeCents,
+            },
+            quantity: 1,
+          });
+        }
+
+        if (valuation.serviceFeeCents > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Service & Packaging Fee (5%)',
+              },
+              unit_amount: valuation.serviceFeeCents,
+            },
+            quantity: 1,
+          });
+        }
+
+        if (valuation.tipCents > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Driver Tip (100% to Driver)',
+              },
+              unit_amount: valuation.tipCents,
+            },
+            quantity: 1,
+          });
+        }
+
+        const session = await stripe.checkout.sessions.create({
+          line_items: lineItems,
+          mode: 'payment',
+          success_url: `${frontendUrl}/order/${firstOrderId}?session_id={CHECKOUT_SESSION_ID}&checkout_id=${checkoutId}&stripe_success=true`,
+          cancel_url: `${frontendUrl}/cart?canceled=true`,
+          client_reference_id: String(checkoutId),
+          metadata: {
+            checkout_id: String(checkoutId),
+            first_order_id: String(firstOrderId),
+            customer_id: String(customerId),
+          },
+        });
+
+        await this.prisma.checkouts.update({
+          where: { id: checkoutId },
+          data: { payment_intent_id: session.id },
+        });
+
+        return {
+          success: true,
+          url: session.url,
+          sessionId: session.id,
+          checkoutId,
+          orderId: firstOrderId,
+          orders: checkoutResult.orders,
+          isStripeHosted: true,
+        };
+      } catch (stripeErr: any) {
+        console.warn('Stripe checkout session creation failed, falling back to direct redirect:', stripeErr?.message);
+      }
+    }
+
+    return {
+      success: true,
+      url: `/order/${firstOrderId}?checkout_id=${checkoutId}&stripe_demo=1`,
+      sessionId: `cs_test_mock_${Date.now()}`,
+      checkoutId,
+      orderId: firstOrderId,
+      orders: checkoutResult.orders,
+      isStripeHosted: false,
+      simulated: true,
     };
   }
 

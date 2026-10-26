@@ -14,7 +14,13 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
   async checkout(@Request() req: any, @Body() dto: CreateOrderDto) {
-    return this.ordersService.createCheckout(req.user.id, dto);
+    return this.ordersService.createStripeCheckoutSession(req.user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('create-stripe-session')
+  async createStripeSession(@Request() req: any, @Body() dto: CreateOrderDto) {
+    return this.ordersService.createStripeCheckoutSession(req.user.id, dto);
   }
 
   @UseGuards(JwtAuthGuard)
