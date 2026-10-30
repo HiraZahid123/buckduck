@@ -739,3 +739,16 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
 .marquee-text:hover {
   animation-play-state: paused;
 }
+
+
+/* Global Print Rules */
+@media print {
+  header,
+  footer,
+  nav,
+  .site-header,
+  .cart-drawer-backdrop,
+  .no-print {
+    display: none !important;
+  }
+}
