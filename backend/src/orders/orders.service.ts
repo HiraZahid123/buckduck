@@ -270,7 +270,7 @@ export class OrdersService {
     if (stripeKey && stripeKey.startsWith('sk_') && !stripeKey.includes('placeholder')) {
       try {
         const StripeConstructor: any = typeof Stripe === 'function' ? Stripe : ((Stripe as any)?.default || require('stripe'));
-        const stripe = new StripeConstructor(stripeKey, { apiVersion: '2024-06-20' as any });
+        const stripe = new StripeConstructor(stripeKey, { apiVersion: '2023-10-16' as any });
 
         const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
         for (const grp of valuation.stores) {
@@ -329,8 +329,20 @@ export class OrdersService {
         }
 
         const session = await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
           line_items: lineItems,
           mode: 'payment',
+          invoice_creation: {
+            enabled: true,
+            invoice_data: {
+              description: `BuckDuck Saturday Delivery (Order #${firstOrderId})`,
+              footer: 'BuckDuck Marketplace · Guaranteed Fresh African & Caribbean Groceries · Direct Merchant Payout',
+              custom_fields: [
+                { name: 'Delivery Route', value: 'Batched Saturday Route' },
+                { name: 'Platform', value: 'BuckDuck / StoreFront USA' },
+              ],
+            },
+          },
           success_url: `${frontendUrl}/order/${firstOrderId}?session_id={CHECKOUT_SESSION_ID}&checkout_id=${checkoutId}&stripe_success=true`,
           cancel_url: `${frontendUrl}/cart?canceled=true`,
           client_reference_id: String(checkoutId),

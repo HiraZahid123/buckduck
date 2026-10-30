@@ -723,3 +723,19 @@ table.table{width:100%;border-collapse:collapse;font-size:14px}
   background: var(--gold-metal);
   color: var(--navy-950);
 }
+
+
+/* Continuous Marquee Scrolling */
+@keyframes marqueeScroll {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.marquee-text {
+  display: inline-block;
+  white-space: nowrap;
+  padding-left: 100%;
+  animation: marqueeScroll 22s linear infinite;
+}
+.marquee-text:hover {
+  animation-play-state: paused;
+}

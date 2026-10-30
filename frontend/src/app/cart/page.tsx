@@ -544,7 +544,7 @@ function CartCheckoutContent() {
 
             {/* Stripe Payment Checkout */}
             <div style={{ marginTop: 20 }}>
-              {/* Express Wallets */}
+              {/* Express Wallets with Official Brand SVGs */}
               <div className="pay-wallets">
                 <button
                   type="button"
@@ -552,17 +552,59 @@ function CartCheckoutContent() {
                   disabled={submitting}
                   onClick={() => handleCheckout('apple_pay')}
                   title="Pay with Apple Pay via Stripe"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    background: '#000000',
+                    color: '#FFFFFF',
+                    height: 48,
+                    borderRadius: 10,
+                    border: 'none',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                    transition: 'transform 0.1s ease',
+                  }}
                 >
-                   Pay
+                  <svg width="17" height="21" viewBox="0 0 170 170" fill="#FFFFFF" style={{ display: 'inline-block' }}>
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.05-7.62-7.85-11.77-14.39-6.09-9.58-10.98-20.2-14.68-31.86-3.7-11.65-5.55-22.75-5.55-33.3 0-14.28 3.56-26.06 10.68-35.33 7.12-9.28 16.03-14.07 26.73-14.39 4.36 0 9.29 1.15 14.81 3.46 5.51 2.3 9.4 3.52 11.66 3.65 1.95-.13 5.95-1.39 12-3.77 6.05-2.38 10.94-3.46 14.68-3.23 11.09.54 20.06 4.68 26.91 12.44-9.69 5.89-14.42 14.08-14.2 24.56.22 8.16 3.34 15.11 9.36 20.84 6.01 5.73 13.14 9.17 21.38 10.33-2.17 6.31-4.78 12.56-7.85 18.75zm-38.38-112.5c0-5.74 2.06-11.19 6.18-16.35 4.13-5.16 9.45-8.54 15.98-10.15 1.08 5.75-.44 11.17-4.56 16.27-4.13 5.1-9.78 8.52-16.96 10.23-.22-.72-.64-1.72-.64-2z" />
+                  </svg>
+                  <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.4, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+                    Pay
+                  </span>
                 </button>
+
                 <button
                   type="button"
                   className="wallet google"
                   disabled={submitting}
                   onClick={() => handleCheckout('google_pay')}
                   title="Pay with Google Pay via Stripe"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    background: '#FFFFFF',
+                    color: '#3C4043',
+                    height: 48,
+                    borderRadius: 10,
+                    border: '1.5px solid #DADCE0',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.1s ease',
+                  }}
                 >
-                  G Pay
+                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ display: 'inline-block' }}>
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                  </svg>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#3C4043', letterSpacing: -0.3, fontFamily: '"Google Sans", Roboto, Arial, sans-serif' }}>
+                    Pay
+                  </span>
                 </button>
               </div>
 

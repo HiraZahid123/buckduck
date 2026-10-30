@@ -37,7 +37,20 @@ export class StoresService {
       throw new NotFoundException(`Store with slug '${slug}' not found`);
     }
 
-    return store;
+    const banner = await this.prisma.settings.findUnique({
+      where: { key: `store_banner_${store.id}` },
+    });
+    let customerBanner = null;
+    if (banner?.value) {
+      try {
+        customerBanner = JSON.parse(banner.value);
+      } catch {}
+    }
+
+    return {
+      ...store,
+      customer_banner: customerBanner,
+    };
   }
 
   async getCategories() {

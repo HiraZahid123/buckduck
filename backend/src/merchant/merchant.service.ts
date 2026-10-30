@@ -60,11 +60,38 @@ export class MerchantService {
       take: 5,
     });
 
+    // Check for merchant customer announcement banner
+    const bannerSetting = await this.prisma.settings.findUnique({
+      where: { key: `store_banner_${storeId}` },
+    });
+    let customerBanner = null;
+    if (bannerSetting?.value) {
+      try {
+        customerBanner = JSON.parse(bannerSetting.value);
+      } catch {}
+    }
+
+    // Check for admin announcement banner marked to show to merchants
+    const adminBannerSetting = await this.prisma.settings.findUnique({
+      where: { key: 'admin_landing_banner' },
+    });
+    let adminAnnouncement: string | null = null;
+    if (adminBannerSetting?.value) {
+      try {
+        const parsed = JSON.parse(adminBannerSetting.value);
+        if (parsed.enabled && parsed.showToMerchants) {
+          adminAnnouncement = parsed.message || null;
+        }
+      } catch {}
+    }
+
     return {
       counts,
       lifetimeSalesCents,
       netPayoutCents,
       lowStockProducts: products.filter((p) => p.stock <= 10),
+      customerBanner,
+      adminAnnouncement,
     };
   }
 
@@ -182,6 +209,18 @@ export class MerchantService {
   }
 
   async updateStore(storeId: number, data: any) {
+    if (data.banner_message !== undefined || data.banner_enabled !== undefined) {
+      const bannerObj = {
+        enabled: Boolean(data.banner_enabled),
+        message: String(data.banner_message || ''),
+      };
+      await this.prisma.settings.upsert({
+        where: { key: `store_banner_${storeId}` },
+        update: { value: JSON.stringify(bannerObj) },
+        create: { key: `store_banner_${storeId}`, value: JSON.stringify(bannerObj) },
+      });
+    }
+
     return this.prisma.stores.update({
       where: { id: storeId },
       data: {

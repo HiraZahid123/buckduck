@@ -63,6 +63,10 @@ export default function MerchantPortalPage() {
 
   const [promotionsEnabled, setPromotionsEnabled] = useState(true);
   const [broadcastNotice, setBroadcastNotice] = useState<any>(null);
+  const [storeBannerEnabled, setStoreBannerEnabled] = useState(false);
+  const [storeBannerMessage, setStoreBannerMessage] = useState('Special 10% off on all fresh produce this Saturday!');
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'day' | 'week'>('week');
+  const [adminAnnouncement, setAdminAnnouncement] = useState<string | null>(null);
 
   // Store profile form
   const [storeForm, setStoreForm] = useState({
@@ -150,7 +154,17 @@ export default function MerchantPortalPage() {
         fetch('/api/merchant/payouts', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
-      if (dashRes.ok) setDashboard(await dashRes.json());
+      if (dashRes.ok) {
+        const d = await dashRes.json();
+        setDashboard(d);
+        if (d.customerBanner) {
+          setStoreBannerEnabled(Boolean(d.customerBanner.enabled));
+          if (d.customerBanner.message) setStoreBannerMessage(d.customerBanner.message);
+        }
+        if (d.adminAnnouncement) {
+          setAdminAnnouncement(d.adminAnnouncement);
+        }
+      }
       if (ordRes.ok) setOrders(await ordRes.json());
       if (prodRes.ok) setProducts(await prodRes.json());
       if (payRes.ok) setPayouts(await payRes.json());
@@ -319,20 +333,62 @@ export default function MerchantPortalPage() {
     }
   };
 
+  const handleSaveStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = localStorage.getItem('bd_token');
+    try {
+      const res = await fetch('/api/merchant/store', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...storeForm,
+          banner_enabled: storeBannerEnabled,
+          banner_message: storeBannerMessage,
+        }),
+      });
+      if (res.ok) {
+        alert('✓ Storefront profile and customer announcement banner updated!');
+      } else {
+        alert('Failed to update storefront');
+      }
+    } catch {
+      alert('Error updating storefront settings');
+    }
+  };
+
   const newCount = orders.filter((o) => o.status === 'placed').length;
   const inProgressCount = orders.filter((o) => ['accepted', 'packing'].includes(o.status)).length;
   const readyCount = orders.filter((o) => o.status === 'ready').length;
 
-  // Mock weekly sales chart data
-  const chartData = [
-    { week: 'Sep 12', sales: 640 },
-    { week: 'Sep 19', sales: 890 },
-    { week: 'Sep 26', sales: 1120 },
-    { week: 'Oct 3', sales: 1450 },
-    { week: 'Oct 10', sales: 1820 },
-    { week: 'Oct 17', sales: 2150 },
-    { week: 'Oct 24', sales: 2680 },
+  // Weekly analytics data
+  const weeklyAnalyticsData = [
+    { period: 'Sep 12', label: 'Week of Sep 12', sales: 640, payout: 544, orders: 12 },
+    { period: 'Sep 19', label: 'Week of Sep 19', sales: 890, payout: 756, orders: 16 },
+    { period: 'Sep 26', label: 'Week of Sep 26', sales: 1120, payout: 952, orders: 21 },
+    { period: 'Oct 3', label: 'Week of Oct 3', sales: 1450, payout: 1232, orders: 28 },
+    { period: 'Oct 10', label: 'Week of Oct 10', sales: 1820, payout: 1547, orders: 34 },
+    { period: 'Oct 17', label: 'Week of Oct 17', sales: 2150, payout: 1827, orders: 41 },
+    { period: 'Oct 24', label: 'Week of Oct 24', sales: 2680, payout: 2278, orders: 50 },
   ];
+
+  // Daily analytics data
+  const dailyAnalyticsData = [
+    { period: 'Mon', label: 'Monday', sales: 210, payout: 178, orders: 4 },
+    { period: 'Tue', label: 'Tuesday', sales: 320, payout: 272, orders: 6 },
+    { period: 'Wed', label: 'Wednesday', sales: 410, payout: 348, orders: 8 },
+    { period: 'Thu', label: 'Thursday', sales: 560, payout: 476, orders: 11 },
+    { period: 'Fri', label: 'Friday (Prep)', sales: 740, payout: 629, orders: 15 },
+    { period: 'Sat AM', label: 'Saturday 6AM–12PM', sales: 1420, payout: 1207, orders: 27 },
+    { period: 'Sat PM', label: 'Saturday 12PM–4PM', sales: 1260, payout: 1071, orders: 23 },
+  ];
+
+  const currentChartData = analyticsTimeframe === 'week' ? weeklyAnalyticsData : dailyAnalyticsData;
+  const totalPeriodSales = currentChartData.reduce((acc, c) => acc + c.sales, 0);
+  const totalPeriodPayouts = currentChartData.reduce((acc, c) => acc + c.payout, 0);
+  const totalPeriodOrders = currentChartData.reduce((acc, c) => acc + c.orders, 0);
 
   if (!loading && (!user || (user.role !== 'merchant' && user.role !== 'admin'))) {
     return (
@@ -693,126 +749,288 @@ export default function MerchantPortalPage() {
                   <h1>Order queue</h1>
                   <p>Move each order across: accept → pack into BuckDuck bags → mark ready for driver pickup.</p>
                 </div>
-                <div className="row">
-                  <span className="badge b-gold" style={{ fontSize: 14 }}>
+                <div className="row" style={{ gap: 8 }}>
+                  <span className="badge b-gold" style={{ fontSize: 13, fontWeight: 700 }}>
                     🛍️ Est. {dashboard?.counts?.totalBags || 4} BuckDuck Bags Needed
                   </span>
                 </div>
               </div>
 
+              {/* Color Code Category Legend */}
+              <div
+                style={{
+                  background: '#FFFFFF',
+                  borderRadius: 12,
+                  padding: '12px 18px',
+                  marginBottom: 16,
+                  border: '1px solid #E2E8F0',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 16,
+                  alignItems: 'center',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                <span style={{ color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 11 }}>
+                  Ticket Color Codes:
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#0369A1' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: '#0284C7' }} />
+                  Morning Window (6 AM – 12 PM)
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#92400E' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: '#D97706' }} />
+                  Afternoon Window (12 PM – 4 PM)
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#6D28D9' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: '#7C3AED' }} />
+                  Multi-Bag Large Order (2+ Bags)
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#047857' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: '#10B981' }} />
+                  Ready For Driver Pickup
+                </span>
+              </div>
+
               <div className="kanban">
                 {/* 1. NEW / PLACED */}
-                <div className="kanban-col">
+                <div className="kanban-col" style={{ borderTop: '4px solid #D97706' }}>
                   <div className="kanban-header">
-                    <span>1. NEW ({newCount})</span>
+                    <span style={{ color: '#D97706', fontWeight: 800 }}>1. NEW ({newCount})</span>
                   </div>
-                  {orders.filter((o) => o.status === 'placed').map((o) => (
-                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
-                      <div className="row between">
-                        <b>{o.number}</b>
-                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                  {orders.filter((o) => o.status === 'placed').map((o) => {
+                    const isMorning = o.delivery_windows?.label?.toLowerCase().includes('morning') || o.delivery_windows?.label?.includes('6 AM');
+                    const isMultiBag = (o.bags || 1) > 1;
+                    const ticketBorder = isMorning ? '#0284C7' : '#D97706';
+                    const ticketBg = isMorning ? '#F0F9FF' : '#FFFBEB';
+                    return (
+                      <div
+                        key={o.id}
+                        className="order-card"
+                        style={{
+                          marginBottom: 12,
+                          borderLeft: `5px solid ${ticketBorder}`,
+                          background: ticketBg,
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div className="row between">
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>{o.number}</b>
+                          <span
+                            className="tiny"
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              background: isMorning ? '#E0F2FE' : '#FEF3C7',
+                              color: isMorning ? '#0369A1' : '#92400E',
+                            }}
+                          >
+                            {isMorning ? '🌅 Morning' : '☀️ Afternoon'}
+                          </span>
+                        </div>
+                        <div className="small" style={{ margin: '6px 0', color: '#334155', fontWeight: 500 }}>
+                          {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
+                        </div>
+                        <div className="row between" style={{ marginBottom: 8, alignItems: 'center' }}>
+                          <span
+                            className="badge"
+                            style={{
+                              background: isMultiBag ? '#EDE9FE' : '#F1F5F9',
+                              color: isMultiBag ? '#6D28D9' : '#475569',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🛍️ {o.bags || 1} Bag{isMultiBag ? 's (Large)' : ''}
+                          </span>
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                        </div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                          <button className="btn btn-primary btn-sm grow" onClick={() => updateOrderStatus(o.id, 'accepted')}>Accept</button>
+                        </div>
                       </div>
-                      <div className="small" style={{ margin: '4px 0' }}>
-                        {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
-                      </div>
-                      <div className="row between" style={{ marginBottom: 8 }}>
-                        <span className="badge b-gold">🛍️ {o.bags} bag(s)</span>
-                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
-                      </div>
-                      <div className="row">
-                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
-                        <button className="btn btn-primary btn-sm grow" onClick={() => updateOrderStatus(o.id, 'accepted')}>Accept</button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {newCount === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No new orders</div>}
                 </div>
 
                 {/* 2. ACCEPTED */}
-                <div className="kanban-col">
+                <div className="kanban-col" style={{ borderTop: '4px solid #0284C7' }}>
                   <div className="kanban-header">
-                    <span>2. ACCEPTED ({orders.filter((o) => o.status === 'accepted').length})</span>
+                    <span style={{ color: '#0284C7', fontWeight: 800 }}>2. ACCEPTED ({orders.filter((o) => o.status === 'accepted').length})</span>
                   </div>
-                  {orders.filter((o) => o.status === 'accepted').map((o) => (
-                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
-                      <div className="row between">
-                        <b>{o.number}</b>
-                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                  {orders.filter((o) => o.status === 'accepted').map((o) => {
+                    const isMorning = o.delivery_windows?.label?.toLowerCase().includes('morning') || o.delivery_windows?.label?.includes('6 AM');
+                    const isMultiBag = (o.bags || 1) > 1;
+                    const ticketBorder = isMorning ? '#0284C7' : '#D97706';
+                    const ticketBg = isMorning ? '#F0F9FF' : '#FFFBEB';
+                    return (
+                      <div
+                        key={o.id}
+                        className="order-card"
+                        style={{
+                          marginBottom: 12,
+                          borderLeft: `5px solid ${ticketBorder}`,
+                          background: ticketBg,
+                        }}
+                      >
+                        <div className="row between">
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>{o.number}</b>
+                          <span
+                            className="tiny"
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              background: isMorning ? '#E0F2FE' : '#FEF3C7',
+                              color: isMorning ? '#0369A1' : '#92400E',
+                            }}
+                          >
+                            {isMorning ? '🌅 Morning' : '☀️ Afternoon'}
+                          </span>
+                        </div>
+                        <div className="small" style={{ margin: '6px 0', color: '#334155', fontWeight: 500 }}>
+                          {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
+                        </div>
+                        <div className="row between" style={{ marginBottom: 8, alignItems: 'center' }}>
+                          <span
+                            className="badge"
+                            style={{
+                              background: isMultiBag ? '#EDE9FE' : '#F1F5F9',
+                              color: isMultiBag ? '#6D28D9' : '#475569',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🛍️ {o.bags || 1} Bag{isMultiBag ? 's (Large)' : ''}
+                          </span>
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                        </div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                          <button className="btn btn-blue btn-sm grow" onClick={() => updateOrderStatus(o.id, 'packing')}>Start packing</button>
+                        </div>
                       </div>
-                      <div className="small" style={{ margin: '4px 0' }}>
-                        {o.users_orders_customer_idTousers?.name} · {o.order_items?.length} items
-                      </div>
-                      <div className="row between" style={{ marginBottom: 8 }}>
-                        <span className="badge b-gold">🛍️ {o.bags} bag(s)</span>
-                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
-                      </div>
-                      <div className="row">
-                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
-                        <button className="btn btn-blue btn-sm grow" onClick={() => updateOrderStatus(o.id, 'packing')}>Start packing</button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {orders.filter((o) => o.status === 'accepted').length === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No accepted orders</div>}
                 </div>
 
                 {/* 3. PACKING */}
-                <div className="kanban-col">
+                <div className="kanban-col" style={{ borderTop: '4px solid #6366F1' }}>
                   <div className="kanban-header">
-                    <span>3. PACKING ({orders.filter((o) => o.status === 'packing').length})</span>
+                    <span style={{ color: '#6366F1', fontWeight: 800 }}>3. PACKING ({orders.filter((o) => o.status === 'packing').length})</span>
                   </div>
-                  {orders.filter((o) => o.status === 'packing').map((o) => (
-                    <div key={o.id} className="order-card" style={{ marginBottom: 12 }}>
-                      <div className="row between">
-                        <b>{o.number}</b>
-                        <span className="tiny muted">{o.delivery_windows?.label?.split('·')[0]}</span>
+                  {orders.filter((o) => o.status === 'packing').map((o) => {
+                    const isMorning = o.delivery_windows?.label?.toLowerCase().includes('morning') || o.delivery_windows?.label?.includes('6 AM');
+                    const isMultiBag = (o.bags || 1) > 1;
+                    const ticketBorder = isMorning ? '#0284C7' : '#D97706';
+                    const ticketBg = isMorning ? '#F0F9FF' : '#FFFBEB';
+                    return (
+                      <div
+                        key={o.id}
+                        className="order-card"
+                        style={{
+                          marginBottom: 12,
+                          borderLeft: `5px solid ${ticketBorder}`,
+                          background: ticketBg,
+                        }}
+                      >
+                        <div className="row between">
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>{o.number}</b>
+                          <span
+                            className="tiny"
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              fontWeight: 700,
+                              background: isMorning ? '#E0F2FE' : '#FEF3C7',
+                              color: isMorning ? '#0369A1' : '#92400E',
+                            }}
+                          >
+                            {isMorning ? '🌅 Morning' : '☀️ Afternoon'}
+                          </span>
+                        </div>
+                        <div className="small" style={{ margin: '6px 0', color: '#334155', fontWeight: 500 }}>
+                          {o.users_orders_customer_idTousers?.name} · Pack into sealed bags
+                        </div>
+                        <div className="row between" style={{ marginBottom: 8, alignItems: 'center' }}>
+                          <span
+                            className="badge"
+                            style={{
+                              background: isMultiBag ? '#EDE9FE' : '#F1F5F9',
+                              color: isMultiBag ? '#6D28D9' : '#475569',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🛍️ Est. {o.bags || 1} Bag{isMultiBag ? 's (Large)' : ''}
+                          </span>
+                          <b style={{ color: '#0F172A', fontSize: 15 }}>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                        </div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
+                          <button
+                            className="btn btn-success btn-sm grow"
+                            onClick={() => {
+                              setReadyOrder(o);
+                              setBagInput(o.bags || 1);
+                            }}
+                          >
+                            Mark ready
+                          </button>
+                        </div>
                       </div>
-                      <div className="small" style={{ margin: '4px 0' }}>
-                        {o.users_orders_customer_idTousers?.name} · Pack into sealed bags
-                      </div>
-                      <div className="row between" style={{ marginBottom: 8 }}>
-                        <span className="badge b-gold">🛍️ Est. {o.bags} bag(s)</span>
-                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
-                      </div>
-                      <div className="row">
-                        <button className="btn btn-ghost btn-sm grow" onClick={() => setDetailOrder(o)}>Details</button>
-                        <button
-                          className="btn btn-success btn-sm grow"
-                          onClick={() => {
-                            setReadyOrder(o);
-                            setBagInput(o.bags || 1);
-                          }}
-                        >
-                          Mark ready
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {orders.filter((o) => o.status === 'packing').length === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No packing orders</div>}
                 </div>
 
                 {/* 4. READY FOR PICKUP */}
-                <div className="kanban-col">
+                <div className="kanban-col" style={{ borderTop: '4px solid #10B981' }}>
                   <div className="kanban-header">
-                    <span>4. READY FOR PICKUP ({readyCount})</span>
+                    <span style={{ color: '#10B981', fontWeight: 800 }}>4. READY FOR PICKUP ({readyCount})</span>
                   </div>
-                  {orders.filter((o) => o.status === 'ready').map((o) => (
-                    <div key={o.id} className="order-card" style={{ marginBottom: 12, background: 'var(--green-bg)' }}>
-                      <div className="row between">
-                        <b>{o.number}</b>
-                        <span className="badge b-green">Ready</span>
+                  {orders.filter((o) => o.status === 'ready').map((o) => {
+                    const isMorning = o.delivery_windows?.label?.toLowerCase().includes('morning') || o.delivery_windows?.label?.includes('6 AM');
+                    const isMultiBag = (o.bags || 1) > 1;
+                    return (
+                      <div
+                        key={o.id}
+                        className="order-card"
+                        style={{
+                          marginBottom: 12,
+                          background: '#ECFDF5',
+                          borderLeft: '5px solid #10B981',
+                          border: '1px solid #A7F3D0',
+                        }}
+                      >
+                        <div className="row between">
+                          <b style={{ color: '#065F46', fontSize: 15 }}>{o.number}</b>
+                          <span className="badge b-green" style={{ fontWeight: 700 }}>Ready</span>
+                        </div>
+                        <div className="small" style={{ margin: '6px 0', color: '#065F46', fontWeight: 600 }}>
+                          {o.users_orders_customer_idTousers?.name}
+                        </div>
+                        <div className="row between" style={{ alignItems: 'center' }}>
+                          <span
+                            className="badge"
+                            style={{
+                              background: '#D1FAE5',
+                              color: '#065F46',
+                              fontWeight: 700,
+                            }}
+                          >
+                            🛍️ {o.bags} Bag(s) Sealed {isMultiBag ? '· Large' : ''}
+                          </span>
+                          <b style={{ color: '#065F46', fontSize: 15 }}>${(o.subtotal_cents / 100).toFixed(2)}</b>
+                        </div>
+                        <div className="tiny" style={{ marginTop: 8, color: '#047857', fontWeight: 500 }}>
+                          ✓ Staged for Saturday {isMorning ? 'Morning' : 'Afternoon'} driver pickup
+                        </div>
                       </div>
-                      <div className="small" style={{ margin: '4px 0' }}>
-                        {o.users_orders_customer_idTousers?.name}
-                      </div>
-                      <div className="row between">
-                        <span className="badge b-gold">🛍️ {o.bags} Bag(s) Sealed</span>
-                        <b>${(o.subtotal_cents / 100).toFixed(2)}</b>
-                      </div>
-                      <div className="tiny muted" style={{ marginTop: 8 }}>
-                        Awaiting Saturday driver pickup
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {readyCount === 0 && <div className="tiny muted center" style={{ padding: 24 }}>No ready orders</div>}
                 </div>
               </div>
@@ -822,6 +1040,30 @@ export default function MerchantPortalPage() {
           {/* SCREEN 2: DASHBOARD */}
           {subView === 'dash' && (
             <div className="stack" style={{ gap: 24 }}>
+              {/* Admin Announcement for Merchants */}
+              {adminAnnouncement && (
+                <div
+                  style={{
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    borderRadius: 12,
+                    padding: '14px 18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    color: '#1E3A8A',
+                  }}
+                >
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>📢</span>
+                  <div>
+                    <strong style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#1D4ED8' }}>
+                      Admin Operational Notice:
+                    </strong>
+                    <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{adminAnnouncement}</div>
+                  </div>
+                </div>
+              )}
+
               <div className="page-h">
                 <div>
                   <h1>Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, {user?.name?.split(' ')[0] || 'Partner'}</h1>
@@ -856,40 +1098,171 @@ export default function MerchantPortalPage() {
                 </div>
               </div>
 
-              {/* Weekly sales chart + Lifetime card */}
-              <div className="dashboard-charts-grid">
-                <div className="card">
-                  <div className="card-h">
-                    <h3>Weekly sales</h3>
-                    <span className="small muted">Merchandise sales by delivery day</span>
+              {/* DYNAMIC ANALYTICS: SALES & PAYOUTS (BY DAY / BY WEEK) */}
+              <div className="card" style={{ padding: 24, borderRadius: 16, border: '1px solid #E2E8F0', background: '#FFFFFF' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0F172A' }}>
+                      Sales & Payout Analytics
+                    </h3>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
+                      Merchandise sales and bank payouts after 15% platform commission
+                    </p>
                   </div>
-                  <BarChart
-                    data={chartData}
-                    valueKey="sales"
-                    labelKey="week"
-                    tipLabel="Merchandise Sales"
-                    color="var(--blue-600)"
-                  />
+
+                  {/* Day vs. Week View Switcher */}
+                  <div style={{ display: 'inline-flex', background: '#F1F5F9', padding: 4, borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                    <button
+                      type="button"
+                      onClick={() => setAnalyticsTimeframe('day')}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        border: 0,
+                        cursor: 'pointer',
+                        background: analyticsTimeframe === 'day' ? '#FFFFFF' : 'transparent',
+                        color: analyticsTimeframe === 'day' ? '#0F172A' : '#64748B',
+                        boxShadow: analyticsTimeframe === 'day' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      📅 By Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAnalyticsTimeframe('week')}
+                      style={{
+                        padding: '6px 16px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        border: 0,
+                        cursor: 'pointer',
+                        background: analyticsTimeframe === 'week' ? '#FFFFFF' : 'transparent',
+                        color: analyticsTimeframe === 'week' ? '#0F172A' : '#64748B',
+                        boxShadow: analyticsTimeframe === 'week' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      📊 By Week
+                    </button>
+                  </div>
                 </div>
 
-                <div className="card">
-                  <h3>Lifetime</h3>
-                  <div className="summary-line" style={{ marginTop: 12 }}>
-                    <span>Delivered orders</span>
-                    <b>{dashboard?.counts?.delivered || 12}</b>
+                {/* Sub-KPI summary row */}
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gap: 16,
+                    marginBottom: 24,
+                  }}
+                >
+                  <div style={{ padding: '14px 18px', background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                      {analyticsTimeframe === 'week' ? 'Selected Weeks' : 'Weekly Run'} Gross Sales
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+                      ${totalPeriodSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
                   </div>
-                  <div className="summary-line">
-                    <span>Gross sales</span>
-                    <b>${((dashboard?.lifetimeSalesCents || 148000) / 100).toFixed(2)}</b>
+
+                  <div style={{ padding: '14px 18px', background: '#F0FDF4', borderRadius: 12, border: '1px solid #BBF7D0' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#166534', textTransform: 'uppercase' }}>
+                      Net Payout (85% to Bank)
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: '#15803D', marginTop: 4 }}>
+                      ${totalPeriodPayouts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
                   </div>
-                  <div className="summary-line">
-                    <span>Commission (15%)</span>
-                    <b>−${(((dashboard?.lifetimeSalesCents || 148000) * 0.15) / 100).toFixed(2)}</b>
+
+                  <div style={{ padding: '14px 18px', background: '#F8FAFC', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>
+                      Orders Fulfilled
+                    </div>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', marginTop: 4 }}>
+                      {totalPeriodOrders} Orders
+                    </div>
                   </div>
-                  <div className="summary-line total">
-                    <span>Your earnings</span>
-                    <span>${(((dashboard?.lifetimeSalesCents || 148000) * 0.85) / 100).toFixed(2)}</span>
-                  </div>
+                </div>
+
+                {/* Dynamic Chart */}
+                <BarChart
+                  data={currentChartData}
+                  valueKey="sales"
+                  labelKey="period"
+                  tipLabel="Merchandise Sales"
+                  color="#2563EB"
+                />
+
+                {/* Itemized Day/Week Breakdown Table */}
+                <div className="table-wrap" style={{ marginTop: 28 }}>
+                  <table className="table" style={{ width: '100%', margin: 0 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B' }}>
+                          {analyticsTimeframe === 'week' ? 'DELIVERY WEEK' : 'DELIVERY DAY'}
+                        </th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'center' }}>ORDERS</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>GROSS SALES</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>15% COMMISSION</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'right' }}>NET PAYOUT (85%)</th>
+                        <th style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textAlign: 'center' }}>STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentChartData.map((row: any, idx: number) => {
+                        const commission = row.sales - row.payout;
+                        return (
+                          <tr key={idx}>
+                            <td>
+                              <strong style={{ color: '#0F172A' }}>{row.label || row.period}</strong>
+                            </td>
+                            <td style={{ textAlign: 'center', color: '#475569' }}>
+                              {row.orders}
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#475569', fontWeight: 600 }}>
+                              ${row.sales.toFixed(2)}
+                            </td>
+                            <td style={{ textAlign: 'right', color: '#DC2626' }}>
+                              −${commission.toFixed(2)}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>
+                              ${row.payout.toFixed(2)}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span className="badge b-green" style={{ fontSize: 11, padding: '2px 8px' }}>
+                                Settled to Bank
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Lifetime Summary */}
+              <div className="card">
+                <h3>Lifetime Overview</h3>
+                <div className="summary-line" style={{ marginTop: 12 }}>
+                  <span>Delivered orders</span>
+                  <b>{dashboard?.counts?.delivered || 12}</b>
+                </div>
+                <div className="summary-line">
+                  <span>Gross sales</span>
+                  <b>${((dashboard?.lifetimeSalesCents || 148000) / 100).toFixed(2)}</b>
+                </div>
+                <div className="summary-line">
+                  <span>Commission (15%)</span>
+                  <b>−${(((dashboard?.lifetimeSalesCents || 148000) * 0.15) / 100).toFixed(2)}</b>
+                </div>
+                <div className="summary-line total">
+                  <span>Your earnings</span>
+                  <span>${(((dashboard?.lifetimeSalesCents || 148000) * 0.85) / 100).toFixed(2)}</span>
                 </div>
               </div>
 
@@ -1040,7 +1413,7 @@ export default function MerchantPortalPage() {
               </div>
 
               <div className="storefront-grid">
-                <form className="card form-grid" onSubmit={(e) => { e.preventDefault(); alert('Storefront settings updated'); }}>
+                <form className="card form-grid" onSubmit={handleSaveStore}>
                   <label className="field span4">
                     Store name
                     <input className="input" value={storeForm.name} onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })} />
@@ -1086,8 +1459,50 @@ export default function MerchantPortalPage() {
                     <input className="input" value={storeForm.phone} onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })} />
                   </label>
 
-                  <div className="span6">
-                    <button type="submit" className="btn btn-primary">Save storefront</button>
+                  {/* Customer Announcement Banner Controls (Requirement #9) */}
+                  <div
+                    className="span6"
+                    style={{
+                      marginTop: 10,
+                      padding: '16px 20px',
+                      background: '#FFFBEB',
+                      borderRadius: 12,
+                      border: '1px solid #FCD34D',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <div>
+                        <strong style={{ color: '#92400E', fontSize: 14 }}>
+                          📢 Customer Scrolling Announcement Banner
+                        </strong>
+                        <div style={{ fontSize: 12, color: '#B45309', marginTop: 2 }}>
+                          Notify customers on your store landing page about fresh arrivals, promotions, or schedule updates.
+                        </div>
+                      </div>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#92400E' }}>
+                        <input
+                          type="checkbox"
+                          checked={storeBannerEnabled}
+                          onChange={(e) => setStoreBannerEnabled(e.target.checked)}
+                          style={{ width: 18, height: 18, accentColor: '#D97706' }}
+                        />
+                        Display Banner
+                      </label>
+                    </div>
+
+                    <input
+                      className="input"
+                      placeholder="e.g. Fresh Ghana yams & smoked red snapper arriving this Friday!"
+                      value={storeBannerMessage}
+                      onChange={(e) => setStoreBannerMessage(e.target.value)}
+                      style={{ background: '#FFFFFF', borderColor: '#FCD34D', color: '#78350F', fontWeight: 600 }}
+                    />
+                  </div>
+
+                  <div className="span6" style={{ marginTop: 12 }}>
+                    <button type="submit" className="btn btn-primary btn-lg" style={{ fontWeight: 700 }}>
+                      Save storefront & banner settings
+                    </button>
                   </div>
                 </form>
 
@@ -1098,6 +1513,23 @@ export default function MerchantPortalPage() {
                     <div className="cover" style={{ background: storeForm.color }}>
                       <div className="avatar">{storeForm.emoji}</div>
                     </div>
+                    {storeBannerEnabled && storeBannerMessage && (
+                      <div
+                        style={{
+                          background: '#FEF3C7',
+                          color: '#92400E',
+                          padding: '6px 12px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          borderBottom: '1px solid #FCD34D',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        📢 {storeBannerMessage}
+                      </div>
+                    )}
                     <div className="body">
                       <h3 className="mb0">{storeForm.name}</h3>
                       <div className="muted small">{storeForm.tagline}</div>

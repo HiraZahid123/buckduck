@@ -55,6 +55,17 @@ export default function CartDrawer() {
     router.push('/cart');
   };
 
+  const handleStartShopping = (e: React.MouseEvent) => {
+    e.preventDefault();
+    closeDrawer();
+    router.push('/stores');
+  };
+
+  const handleContinueShopping = (e: React.MouseEvent) => {
+    e.preventDefault();
+    closeDrawer();
+  };
+
   return (
     <div
       className="cart-drawer-backdrop"
@@ -180,14 +191,14 @@ export default function CartDrawer() {
               <p className="muted small" style={{ margin: 0, maxWidth: 260 }}>
                 Explore plantains, palm oil, fresh goat meat, and authentic staples from local markets.
               </p>
-              <Link
-                href="/stores"
+              <button
+                type="button"
                 className="btn btn-gold btn-sm"
-                style={{ marginTop: 12, textDecoration: 'none', display: 'inline-block' }}
-                onClick={closeDrawer}
+                style={{ marginTop: 12, display: 'inline-block', cursor: 'pointer', fontWeight: 600 }}
+                onClick={handleStartShopping}
               >
-                Start Shopping
-              </Link>
+                Start Shopping →
+              </button>
             </div>
           ) : (
             Object.values(storesGrouped).map((group: any) => (
@@ -372,14 +383,14 @@ export default function CartDrawer() {
               Proceed to Checkout →
             </button>
 
-            <Link
-              href="/stores"
+            <button
+              type="button"
               className="btn btn-ghost btn-sm btn-block"
-              style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}
-              onClick={closeDrawer}
+              style={{ textAlign: 'center', display: 'block', cursor: 'pointer', fontWeight: 600 }}
+              onClick={handleContinueShopping}
             >
               Continue Shopping
-            </Link>
+            </button>
           </div>
         )}
       </div>

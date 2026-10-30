@@ -14,6 +14,7 @@ export default function OrderTrackingPage() {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   useEffect(() => {
     async function loadOrder() {
@@ -106,9 +107,23 @@ export default function OrderTrackingPage() {
       {/* Top Bar */}
       <div className="row between wrap" style={{ gap: 12, alignItems: 'flex-start' }}>
         <div>
-          <Link href="/account" className="small" style={{ color: 'var(--blue-700)' }}>
-            ← All orders
-          </Link>
+          <div className="row wrap" style={{ gap: 10, alignItems: 'center', marginBottom: 6 }}>
+            <Link href="/account" className="small" style={{ color: 'var(--blue-700)', fontWeight: 600 }}>
+              ← All orders
+            </Link>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <Link
+              href={order.stores?.slug ? `/stores/${order.stores.slug}` : '/stores'}
+              className="small"
+              style={{ color: 'var(--navy-900)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            >
+              🏪 Back to {storeName}
+            </Link>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <Link href="/stores" className="small" style={{ color: 'var(--muted)', fontWeight: 500 }}>
+              Browse Stores
+            </Link>
+          </div>
           <h1 className="display mt8 mb0" style={{ fontSize: 'clamp(24px, 6vw, 36px)', wordBreak: 'break-word' }}>
             Order {orderNumber}
           </h1>
@@ -123,9 +138,21 @@ export default function OrderTrackingPage() {
           </div>
         </div>
 
-        <span className={`badge ${badgeInfo.cls}`} style={{ fontSize: 13, padding: '4px 12px', flexShrink: 0 }}>
-          {badgeInfo.label}
-        </span>
+        <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            style={{ border: '1px solid var(--line)', background: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            onClick={() => setShowInvoiceModal(true)}
+            title="View polished DoorDash-style grocery tax invoice"
+          >
+            <span>🧾</span>
+            <span>View Invoice</span>
+          </button>
+          <span className={`badge ${badgeInfo.cls}`} style={{ fontSize: 13, padding: '4px 12px', flexShrink: 0 }}>
+            {badgeInfo.label}
+          </span>
+        </div>
       </div>
 
       <div className="layout-2 mt24">
@@ -305,8 +332,314 @@ export default function OrderTrackingPage() {
               🛍️ {order.bags || 1} BuckDuck bag{(order.bags || 1) > 1 ? 's' : ''}
             </span>
           </div>
+
+          <div className="mt16 stack" style={{ gap: 8 }}>
+            <Link
+              href={order.stores?.slug ? `/stores/${order.stores.slug}` : '/stores'}
+              className="btn btn-secondary btn-block btn-sm"
+              style={{ textAlign: 'center', textDecoration: 'none', fontWeight: 600 }}
+            >
+              🏪 Back to {storeName}
+            </Link>
+            <button
+              type="button"
+              className="btn btn-gold btn-block btn-sm"
+              onClick={() => setShowInvoiceModal(true)}
+              style={{ fontWeight: 700 }}
+            >
+              📄 DoorDash-Style Invoice
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-block btn-sm"
+              onClick={() => window.print()}
+            >
+              🖨️ Print Receipt
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* DOORDASH-STYLE INVOICE MODAL */}
+      {showInvoiceModal && (
+        <div
+          className="modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowInvoiceModal(false);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+        >
+          <div
+            className="doordash-invoice-card"
+            style={{
+              background: '#FFFFFF',
+              borderRadius: 16,
+              maxWidth: 680,
+              width: '100%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+              border: '1px solid #E2E8F0',
+            }}
+          >
+            {/* Top Red & Navy DoorDash-style Brand Bar */}
+            <div
+              style={{
+                background: 'linear-gradient(90deg, #EB1700 0%, #D4A017 50%, #0B1F4B 100%)',
+                height: 6,
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+              }}
+            />
+
+            <div style={{ padding: '28px 32px' }}>
+              {/* Invoice Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #F1F5F9', paddingBottom: 20 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 28 }}>🦆</div>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 20, color: '#0F172A', letterSpacing: '-0.02em' }}>
+                        BuckDuck <span style={{ color: '#D4A017' }}>StoreFront USA</span>
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        Official Grocery Delivery Invoice & Receipt
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <span
+                    style={{
+                      background: '#DCFCE7',
+                      color: '#15803D',
+                      padding: '4px 10px',
+                      borderRadius: 20,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      display: 'inline-block',
+                      marginBottom: 6,
+                    }}
+                  >
+                    ✓ PAID IN FULL
+                  </span>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>
+                    Invoice #{orderNumber}
+                  </div>
+                  <div className="tiny muted">
+                    {new Date(order.created_at).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Store & Customer Dual Column (DoorDash precedence) */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, padding: '20px 0', borderBottom: '1px solid #F1F5F9' }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                    Merchant Partner
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0F172A' }}>
+                    {order.stores?.emoji || '🏪'} {storeName}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
+                    {order.stores?.address || '8401 Colesville Rd'}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569' }}>
+                    {order.stores?.city || 'Silver Spring'}, {order.stores?.state || 'MD'} {order.stores?.zip || '20910'}
+                  </div>
+                  {order.stores?.phone && (
+                    <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+                      📞 {order.stores.phone}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                    Customer Deliver To
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0F172A' }}>
+                    {(() => {
+                      const rawName = order.users_orders_customer_idTousers?.name || user?.name;
+                      if (!rawName) return 'Customer';
+                      const parts = rawName.trim().split(/\s+/);
+                      return parts.length === 1 ? parts[0] : `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+                    })()}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
+                    {order.address_line1} {order.address_line2 || ''}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#475569' }}>
+                    {order.city}, {order.state} {order.zip}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#0284C7', fontWeight: 600, marginTop: 4 }}>
+                    🗓️ {windowLabel}
+                  </div>
+                </div>
+              </div>
+
+              {/* Itemized Products Table */}
+              <div style={{ padding: '20px 0' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                  Itemized Grocery Summary ({order.order_items?.length || 0} items)
+                </div>
+
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #E2E8F0', textAlign: 'left', color: '#64748B', fontSize: 11, textTransform: 'uppercase' }}>
+                      <th style={{ padding: '8px 0' }}>Item</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'center' }}>Unit</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'center' }}>Qty</th>
+                      <th style={{ padding: '8px 8px', textAlign: 'right' }}>Price</th>
+                      <th style={{ padding: '8px 0', textAlign: 'right' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {order.order_items?.map((item: any) => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '10px 0', fontWeight: 600, color: '#0F172A' }}>
+                          <span style={{ marginRight: 6 }}>{item.products?.emoji || item.emoji || '🛒'}</span>
+                          {item.products?.name || item.name}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#64748B', fontSize: 12 }}>
+                          {item.products?.unit || item.unit || '1 unit'}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', fontWeight: 700, color: '#0F172A' }}>
+                          {item.qty}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#64748B' }}>
+                          {formatMoney(item.price_cents)}
+                        </td>
+                        <td style={{ padding: '10px 0', textAlign: 'right', fontWeight: 700, color: '#0F172A' }}>
+                          {formatMoney(item.price_cents * item.qty)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Financial Ledger (DoorDash Breakdown) */}
+              <div style={{ background: '#F8FAFC', borderRadius: 12, padding: '16px 20px', border: '1px solid #E2E8F0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#475569' }}>
+                  <span>Merchandise Subtotal</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{formatMoney(order.subtotal_cents)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#475569' }}>
+                  <span>Batched Saturday Delivery Fee</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{formatMoney(order.delivery_fee_cents || 599)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#475569' }}>
+                  <span>Packaging & Service Fee (5%)</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{formatMoney(order.service_fee_cents || 150)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: '#475569' }}>
+                  <span>Estimated Groceries Sales Tax</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{formatMoney(order.tax_cents || 0)} (Exempt)</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 12, color: '#475569' }}>
+                  <span>Driver Tip (100% to Driver)</span>
+                  <span style={{ fontWeight: 600, color: '#0F172A' }}>{formatMoney(order.tip_cents || 300)}</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    paddingTop: 12,
+                    borderTop: '2px solid #CBD5E1',
+                    fontSize: 16,
+                    fontWeight: 900,
+                    color: '#0B1F4B',
+                  }}
+                >
+                  <span>Total Amount Paid</span>
+                  <span style={{ fontSize: 18, color: '#0B1F4B' }}>{formatMoney(order.total_cents)}</span>
+                </div>
+              </div>
+
+              {/* Payment Processing Footnote */}
+              <div style={{ marginTop: 16, padding: '12px 16px', background: '#FFFFFF', borderRadius: 8, border: '1px dashed #CBD5E1', fontSize: 12, color: '#64748B', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <div>
+                  <strong>Payment Processed by Stripe:</strong> Credit / Debit Card · Direct Merchant Settlement (Zero Escrow)
+                </div>
+                <div style={{ fontWeight: 700, color: '#0B1F4B' }}>
+                  🔒 3D-Secure Authenticated
+                </div>
+              </div>
+
+              {/* Modal Action Buttons */}
+              <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => setShowInvoiceModal(false)}
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => window.print()}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0B1F4B', fontWeight: 700 }}
+                >
+                  <span>🖨️</span>
+                  <span>Print / Save PDF</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Print Stylesheet */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .doordash-invoice-card,
+          .doordash-invoice-card * {
+            visibility: visible;
+          }
+          .doordash-invoice-card {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+          }
+          .modal-backdrop {
+            position: static !important;
+            background: none !important;
+            padding: 0 !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

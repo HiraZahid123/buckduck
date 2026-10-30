@@ -33,6 +33,7 @@ interface Store {
   emoji: string;
   rating: number;
   products: Product[];
+  customer_banner?: { enabled: boolean; message: string } | null;
 }
 
 export default function StoreDetailPage() {
@@ -144,6 +145,53 @@ export default function StoreDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Merchant Customer Announcement Banner */}
+      {store.customer_banner?.enabled && store.customer_banner?.message && (
+        <div
+          style={{
+            background: 'linear-gradient(90deg, #FEF3C7, #FDE68A, #FEF3C7)',
+            borderBottom: '1px solid #FCD34D',
+            color: '#78350F',
+            padding: '10px 16px',
+            fontSize: 14,
+            fontWeight: 600,
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1200,
+              margin: '0 auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 18, flexShrink: 0 }}>📢</span>
+            <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+              <div className="marquee-text" style={{ fontSize: 13, fontWeight: 600 }}>
+                {store.customer_banner.message}
+              </div>
+            </div>
+            <span
+              style={{
+                fontSize: 11,
+                padding: '2px 8px',
+                borderRadius: 999,
+                background: '#F59E0B',
+                color: '#FFFFFF',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                flexShrink: 0,
+              }}
+            >
+              Store Update
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Products & Catalog */}
       <div className="container" style={{ padding: '32px 20px' }}>
