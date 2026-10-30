@@ -391,7 +391,7 @@ export default function OrderTrackingPage() {
             className="btn btn-sm btn-ghost"
             style={{ border: '1px solid var(--line)', background: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             onClick={() => setShowInvoiceModal(true)}
-            title="View polished DoorDash-style grocery tax invoice"
+            title="View grocery tax invoice"
           >
             <span>🧾</span>
             <span>View Invoice</span>
@@ -594,7 +594,7 @@ export default function OrderTrackingPage() {
               onClick={() => setShowInvoiceModal(true)}
               style={{ fontWeight: 700 }}
             >
-              📄 DoorDash-Style Invoice
+              📄 Invoice
             </button>
             <button
               type="button"
